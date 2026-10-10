@@ -1,0 +1,40 @@
+{
+  "version": 1.1,
+  "tags": [
+    {
+      "name": "x-dc",
+      "description": "Claude Design Canvas ルート（モックアップ専用）。"
+    },
+    {
+      "name": "helmet",
+      "description": "Canvas 用の head 相当（font / style の差し込み）。"
+    },
+    {
+      "name": "sc-for",
+      "description": "Canvas 用リスト繰り返し。",
+      "attributes": [
+        { "name": "list", "description": "バインドする配列式（例: {{items}}）。" },
+        { "name": "as", "description": "ループ変数名。" },
+        {
+          "name": "hint-placeholder-count",
+          "description": "プレビュー用プレースホルダ行数。"
+        }
+      ]
+    },
+    {
+      "name": "sc-if",
+      "description": "Canvas 用条件表示。",
+      "attributes": [
+        { "name": "value", "description": "真偽式（例: {{showAd}}）。" },
+        {
+          "name": "hint-placeholder-val",
+          "description": "プレビュー用の真偽ヒント（例: {{true}}）。"
+        }
+      ]
+    }
+  ],
+  "globalAttributes": [
+    { "name": "onClick", "description": "Canvas 用クリックハンドラ（React 風）。" },
+    { "name": "onChange", "description": "Canvas 用 change ハンドラ。" }
+  ]
+}

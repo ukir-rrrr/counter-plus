@@ -3,5 +3,7 @@
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit",
     "source.sortMembers": "explicit"
-  }
+  },
+  "html.customData": [".vscode/dc-html-custom-data.json"],
+  "html.validate.styles": false
 }

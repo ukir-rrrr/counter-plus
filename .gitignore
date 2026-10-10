@@ -41,3 +41,12 @@ example
 # generated native folders
 /ios
 /android
+
+# secrets
+.env
+
+# personal Claude settings
+.claude/settings.local.json
+
+# private business docs (do not publish)
+docs/private/

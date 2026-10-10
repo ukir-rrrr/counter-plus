@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>履歴</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&amp;family=IBM+Plex+Sans+JP:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0F6E5C}a:hover{color:#0A4F42}
+button{cursor:pointer}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F4F5F2; color: #1B1F1D; font-family: 'IBM Plex Sans JP', sans-serif; display: flex; flex-direction: column; overflow: hidden">
+
+<div style="padding: 54px 10px 6px; display: flex; align-items: center; justify-content: space-between">
+<button aria-label="戻る" style="width: 44px; height: 44px; border: 0; border-radius: 12px; background: transparent; color: #1B1F1D; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg></button>
+<span style="font-size: 17px; font-weight: 700">履歴</span>
+<button aria-label="履歴をCSVで書き出す" style="width: 44px; height: 44px; border: 0; border-radius: 12px; background: transparent; color: #1B1F1D; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"></path><path d="M7.5 10.5L12 15l4.5-4.5"></path><path d="M5 19h14"></path></svg></button>
+</div>
+
+<div style="padding: 4px 16px 12px; display: flex; gap: 8px">
+<sc-for list="{{chips}}" as="c" hint-placeholder-count="3">
+<button onClick="{{c.pick}}" aria-pressed="{{c.pressed}}" style="height: 36px; padding: 0 14px; border: 1px solid {{c.border}}; border-radius: 18px; background: {{c.bg}}; color: {{c.fg}}; font-family: inherit; font-size: 13px; font-weight: 500">{{c.label}}</button>
+</sc-for>
+</div>
+
+<div style="flex-grow: 1; margin: 0 16px; overflow: hidden; display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+<sc-if value="{{r.isHead}}" hint-placeholder-val="{{ false }}">
+<span style="padding: 8px 4px 2px; font-size: 12px; font-weight: 500; color: #59615D">{{r.date}}</span>
+</sc-if>
+<sc-if value="{{r.isRow}}" hint-placeholder-val="{{ true }}">
+<div style="min-height: 52px; padding: 0 14px; background: #FFFFFF; border: 1px solid #E3E6E1; border-radius: 12px; display: flex; align-items: center; gap: 10px">
+<span style="flex-shrink: 0; width: 40px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #59615D">{{r.time}}</span>
+<span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px">
+<span style="font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.item}}</span>
+<span style="font-size: 11px; color: #646C68">{{r.cat}}</span>
+</span>
+<span style="flex-shrink: 0; min-width: 44px; padding: 2px 8px; box-sizing: border-box; border-radius: 6px; background: {{r.badgeBg}}; color: {{r.badgeFg}}; font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; text-align: center">{{r.delta}}</span>
+<span style="flex-shrink: 0; width: 52px; text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: #3A413D">→ {{r.after}}</span>
+</div>
+</sc-if>
+</sc-for>
+</div>
+
+<div style="padding: 10px 16px 34px; text-align: center; font-size: 11px; color: #646C68">＋・−・編集・リセットをすべて時刻つきで記録しています</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#0F6E5C","options":["#0F6E5C","#1F4FB8","#B4531F","#1B1F1D"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  data() {
+    return [
+      { date: '今日 10月9日', time: '18:42', item: 'マグカップ 白', cat: '棚 A', type: 'inc', delta: '+1', after: 24 },
+      { date: '今日 10月9日', time: '18:42', item: 'マグカップ 白', cat: '棚 A', type: 'inc', delta: '+1', after: 23 },
+      { date: '今日 10月9日', time: '18:40', item: 'トートバッグ', cat: '棚 A', type: 'dec', delta: '−1', after: 12 },
+      { date: '今日 10月9日', time: '18:35', item: 'ポストカード', cat: '棚 A', type: 'inc', delta: '+10', after: 56 },
+      { date: '今日 10月9日', time: '18:31', item: 'ハンドタオル', cat: '棚 B', type: 'edit', delta: '編集', after: 37 },
+      { date: '昨日 10月8日', time: '20:05', item: 'ノート A5', cat: '棚 A', type: 'reset', delta: '0に', after: 0 },
+      { date: '昨日 10月8日', time: '19:58', item: 'アロマキャンドル', cat: '棚 B', type: 'inc', delta: '+5', after: 9 },
+      { date: '昨日 10月8日', time: '19:50', item: 'マグカップ 黒', cat: '棚 A', type: 'dec', delta: '−1', after: 18 }
+    ];
+  }
+  renderVals() {
+    const accent = this.props.accent ?? '#0F6E5C';
+    const filter = (this.state && this.state.filter) || 'すべて';
+    const chips = ['すべて', '棚 A', '棚 B'].map((label) => {
+      const on = label === filter;
+      return {
+        label: label,
+        pressed: on ? 'true' : 'false',
+        bg: on ? '#1B1F1D' : '#FFFFFF',
+        fg: on ? '#FFFFFF' : '#1B1F1D',
+        border: on ? '#1B1F1D' : '#DDE1DB',
+        pick: () => this.setState({ filter: label })
+      };
+    });
+    const tone = {
+      inc: { bg: '#E3F1EC', fg: '#0A4F42' },
+      dec: { bg: '#EEF0EC', fg: '#3A413D' },
+      edit: { bg: '#FBF0E1', fg: '#7A4410' },
+      reset: { bg: '#FBF0E1', fg: '#7A4410' }
+    };
+    const rows = [];
+    let last = '';
+    this.data().filter((d) => filter === 'すべて' || d.cat === filter).forEach((d) => {
+      if (d.date !== last) {
+        rows.push({ isHead: true, isRow: false, date: d.date });
+        last = d.date;
+      }
+      rows.push({
+        isHead: false,
+        isRow: true,
+        time: d.time,
+        item: d.item,
+        cat: d.cat,
+        delta: d.delta,
+        after: d.after,
+        badgeBg: tone[d.type].bg,
+        badgeFg: tone[d.type].fg
+      });
+    });
+    return { accent: accent, chips: chips, rows: rows };
+  }
+}
+</script>
+</body>
+</html>

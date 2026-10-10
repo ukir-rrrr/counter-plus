@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>CSV出力</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&amp;family=IBM+Plex+Sans+JP:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0F6E5C}a:hover{color:#0A4F42}
+button{cursor:pointer}
+input[type=checkbox]{width:20px;height:20px;margin:0;accent-color:#0F6E5C}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F4F5F2; color: #1B1F1D; font-family: 'IBM Plex Sans JP', sans-serif; display: flex; flex-direction: column; overflow: hidden">
+
+<div style="padding: 54px 10px 6px; display: flex; align-items: center; justify-content: space-between">
+<button aria-label="閉じる" style="width: 44px; height: 44px; border: 0; border-radius: 12px; background: transparent; color: #1B1F1D; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg></button>
+<span style="font-size: 17px; font-weight: 700">CSVで書き出す</span>
+<span style="width: 44px"></span>
+</div>
+
+<div style="padding: 4px 16px 0; display: flex; flex-direction: column; gap: 16px">
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 12px; font-weight: 500; color: #59615D">書き出す範囲</span>
+<div style="padding: 3px; border-radius: 12px; background: #E4E7E2; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px">
+<sc-for list="{{scopes}}" as="s" hint-placeholder-count="2">
+<button onClick="{{s.pick}}" aria-pressed="{{s.pressed}}" style="height: 40px; border: 0; border-radius: 10px; background: {{s.bg}}; color: #1B1F1D; font-family: inherit; font-size: 13px; font-weight: {{s.weight}}; box-shadow: {{s.shadow}}">{{s.label}}</button>
+</sc-for>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 12px; font-weight: 500; color: #59615D">含める列（項目名と数は必ず含みます）</span>
+<div style="background: #FFFFFF; border: 1px solid #E3E6E1; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column">
+<sc-for list="{{opts}}" as="o" hint-placeholder-count="3">
+<label for="{{o.id}}" style="height: 48px; padding: 0 14px; border-bottom: 1px solid #ECEEEA; display: flex; align-items: center; justify-content: space-between; font-size: 15px; cursor: pointer">{{o.label}}<input type="checkbox" id="{{o.id}}" checked="{{o.on}}" onChange="{{o.flip}}"></label>
+</sc-for>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 500; color: #59615D"><span>プレビュー</span><span style="font-family: 'IBM Plex Mono', monospace">{{fileName}}</span></span>
+<div style="padding: 12px 14px; border-radius: 14px; background: #1E2321; color: #E6EAE7; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; line-height: 1.7; display: flex; flex-direction: column; overflow: hidden">
+<sc-for list="{{lines}}" as="ln" hint-placeholder-count="6">
+<span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: {{ln.color}}">{{ln.text}}</span>
+</sc-for>
+</div>
+<span style="font-size: 11px; color: #646C68">Excelで開いても文字化けしない形式（UTF-8 BOM付き）で保存します</span>
+</div>
+</div>
+
+<div style="flex-grow: 1"></div>
+
+<div style="padding: 0 16px 34px; display: flex; flex-direction: column; gap: 8px">
+<button style="height: 56px; border: 0; border-radius: 16px; background: {{accent}}; color: #FFFFFF; font-family: inherit; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4"></path><path d="M7.5 8.5L12 4l4.5 4.5"></path><path d="M5 13v6h14v-6"></path></svg>共有シートで送る</button>
+<span style="text-align: center; font-size: 11px; color: #646C68">メール・AirDrop・「ファイル」への保存などを選べます</span>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#0F6E5C","options":["#0F6E5C","#1F4FB8","#B4531F","#1B1F1D"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  data() {
+    return [
+      { cat: '棚 A', name: 'マグカップ 白', count: 24, memo: '棚上段', at: '2026-10-09 18:42' },
+      { cat: '棚 A', name: 'マグカップ 黒', count: 18, memo: '棚上段', at: '2026-10-08 19:50' },
+      { cat: '棚 A', name: 'トートバッグ', count: 12, memo: 'フック', at: '2026-10-09 18:40' },
+      { cat: '棚 B', name: 'ハンドタオル', count: 37, memo: '引き出し', at: '2026-10-09 18:31' },
+      { cat: '棚 B', name: 'アロマキャンドル', count: 9, memo: 'レジ横', at: '2026-10-08 19:58' }
+    ];
+  }
+  renderVals() {
+    const st = this.state || {};
+    const scope = st.scope || 'one';
+    const useCat = st.cat ?? true;
+    const useMemo = st.memo ?? true;
+    const useAt = st.at ?? false;
+    const scopes = [
+      { key: 'one', label: 'このカテゴリ（棚 A）' },
+      { key: 'all', label: 'すべてのカテゴリ' }
+    ].map((s) => {
+      const on = s.key === scope;
+      return {
+        label: s.label,
+        pressed: on ? 'true' : 'false',
+        bg: on ? '#FFFFFF' : 'transparent',
+        weight: on ? '700' : '500',
+        shadow: on ? '0 1px 3px rgba(0,0,0,0.12)' : 'none',
+        pick: () => this.setState({ scope: s.key })
+      };
+    });
+    const opts = [
+      { id: 'opt-cat', key: 'cat', label: 'カテゴリ名', on: useCat },
+      { id: 'opt-memo', key: 'memo', label: 'メモ', on: useMemo },
+      { id: 'opt-at', key: 'at', label: '最終更新日時', on: useAt }
+    ].map((o) => ({
+      id: o.id,
+      label: o.label,
+      on: o.on,
+      flip: () => this.setState({ [o.key]: !o.on })
+    }));
+    const rows = this.data().filter((d) => scope === 'all' || d.cat === '棚 A');
+    const head = [];
+    if (useCat) head.push('カテゴリ');
+    head.push('項目名', '数');
+    if (useMemo) head.push('メモ');
+    if (useAt) head.push('最終更新');
+    const lines = [{ text: head.join(','), color: '#9FD9C4' }].concat(rows.map((d) => {
+      const cells = [];
+      if (useCat) cells.push(d.cat);
+      cells.push(d.name, String(d.count));
+      if (useMemo) cells.push(d.memo);
+      if (useAt) cells.push(d.at);
+      return { text: cells.join(','), color: '#E6EAE7' };
+    }));
+    return {
+      accent: this.props.accent ?? '#0F6E5C',
+      scopes: scopes,
+      opts: opts,
+      lines: lines,
+      fileName: scope === 'all' ? 'counter_all_20261009.csv' : 'counter_棚A_20261009.csv'
+    };
+  }
+}
+</script>
+</body>
+</html>
