@@ -1,14 +1,14 @@
+import { router } from 'expo-router';
 import { memo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { MinusIcon, PlusIcon } from '@/components/icons';
 import { itemColors, type ItemColor } from '@/constants/theme';
 import { useThemeColors } from '@/constants/use-theme-colors';
-import { tapHaptic } from '@/lib/haptics';
+import { longPressHaptic, tapHaptic } from '@/lib/haptics';
 
 import { useCountersStore } from '../store';
 
-// 行の長押し（編集シート）はステップ3で付ける
 export const CounterRow = memo(function CounterRow({ id }: { id: string }) {
   const c = useThemeColors();
   // この行の項目だけを購読し、他の行が変わっても再描画しない
@@ -20,7 +20,13 @@ export const CounterRow = memo(function CounterRow({ id }: { id: string }) {
   const dotColor = itemColors[counter.color as ItemColor] ?? itemColors.gray;
 
   return (
-    <View className="h-14 flex-row items-center gap-2 border-b border-divider pl-3.5 pr-1.5">
+    <Pressable
+      accessibilityHint="長押しで編集"
+      onLongPress={() => {
+        longPressHaptic();
+        router.push({ pathname: '/counter/[id]', params: { id } });
+      }}
+      className="h-14 flex-row items-center gap-2 border-b border-divider pl-3.5 pr-1.5 active:bg-background">
       <View className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: dotColor }} />
       <View className="min-w-0 flex-1 gap-px">
         <Text numberOfLines={1} className="font-sans-medium text-body-sm text-ink">
@@ -57,6 +63,6 @@ export const CounterRow = memo(function CounterRow({ id }: { id: string }) {
         className="h-11 w-14 shrink-0 items-center justify-center rounded-control bg-accent active:opacity-80">
         <PlusIcon color={c.onAccent} />
       </Pressable>
-    </View>
+    </Pressable>
   );
 });

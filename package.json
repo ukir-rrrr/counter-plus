@@ -6,6 +6,7 @@
     "@expo-google-fonts/ibm-plex-mono": "^0.4.1",
     "@expo-google-fonts/ibm-plex-sans-jp": "^0.4.2",
     "@expo/ui": "~57.0.22",
+    "@gorhom/bottom-sheet": "^5.2.14",
     "drizzle-orm": "^0.45",
     "expo": "~57.0.27",
     "expo-constants": "~57.0.21",

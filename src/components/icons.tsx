@@ -43,6 +43,14 @@ export function ChevronDownIcon({ color, size = 16 }: IconProps) {
   );
 }
 
+export function ChevronRightIcon({ color, size = 16 }: IconProps) {
+  return (
+    <Icon color={color} size={size} strokeWidth={2}>
+      <Path d="M9 6l6 6-6 6" />
+    </Icon>
+  );
+}
+
 export function SettingsIcon({ color, size = 22 }: IconProps) {
   return (
     <Icon color={color} size={size} strokeWidth={1.8}>

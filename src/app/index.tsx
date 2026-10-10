@@ -11,6 +11,7 @@ import { CounterRow } from '@/features/counters/components/CounterRow';
 import { HomeHeader } from '@/features/counters/components/HomeHeader';
 import { Toolbar } from '@/features/counters/components/Toolbar';
 import { TotalCard } from '@/features/counters/components/TotalCard';
+import { UndoToast } from '@/features/counters/components/UndoToast';
 import { useCountersStore } from '@/features/counters/store';
 import { useSettingsStore } from '@/features/settings/store';
 
@@ -50,6 +51,10 @@ export default function Home() {
           ListFooterComponent={AddCounterButton}
           className="grow-0 rounded-card border border-border bg-surface"
         />
+        {/* 編集シートでリセットしてすぐ閉じても、ここで取り消せる */}
+        <View className="absolute bottom-2 left-2 right-2">
+          <UndoToast />
+        </View>
       </View>
       <Text className="px-screen pt-2 text-center font-sans text-hint text-ink-subtle">行を長押しで編集・並べ替え</Text>
       <Toolbar />
