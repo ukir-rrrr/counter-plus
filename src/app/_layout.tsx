@@ -12,11 +12,13 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import { Text, useColorScheme, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { colors, type ColorScheme } from '@/constants/theme';
 import { db } from '@/db/client';
 import migrations from '@/db/migrations/migrations';
 import { ensureDefaultCategory } from '@/features/categories/repository';
+import { useSettingsStore } from '@/features/settings/store';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -51,7 +53,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (!migration.success) return;
-    ensureDefaultCategory()
+    Promise.all([ensureDefaultCategory(), useSettingsStore.getState().load()])
       .then(() => setSeeded(true))
       .catch((e: unknown) => setSeedError(e instanceof Error ? e : new Error(String(e))));
   }, [migration.success]);
@@ -77,8 +79,21 @@ export default function RootLayout() {
   if (!ready) return null;
 
   return (
-    <ThemeProvider value={navigationTheme(scheme)}>
-      <Stack />
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider value={navigationTheme(scheme)}>
+        <Stack>
+          {/* 編集シート：透明なモーダルの上に @gorhom/bottom-sheet を出す */}
+          <Stack.Screen
+            name="counter/[id]"
+            options={{
+              presentation: 'transparentModal',
+              animation: 'fade',
+              headerShown: false,
+              contentStyle: { backgroundColor: 'transparent' },
+            }}
+          />
+        </Stack>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }

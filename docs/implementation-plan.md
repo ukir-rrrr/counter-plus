@@ -19,19 +19,19 @@ AIに頼むときは「implementation-plan.md のステップ N を実装して�
 
 ## ステップ2：ホーム（リスト）とカウント
 
-- [ ] `src/features/counters/`：repository（CRUD・増減）と Zustand store
-- [ ] 増減は「store更新 → 即描画 → SQLite更新＋count_events追加（同一トランザクション）」
-- [ ] 0未満にしない
-- [ ] ホーム画面：ヘッダー、合計カード（自動保存済みチップ）、リスト行（−・数・＋）、項目を追加
-- [ ] expo-haptics でタップ時に振動（設定に従う）
-- [ ] expo-keep-awake（設定に従う）
+- [x] `src/features/counters/`：repository（CRUD・増減）と Zustand store
+- [x] 増減は「store更新 → 即描画 → SQLite更新＋count_events追加（同一トランザクション）」
+- [x] 0未満にしない
+- [x] ホーム画面：ヘッダー、合計カード（自動保存済みチップ）、リスト行（−・数・＋）、項目を追加
+- [x] expo-haptics でタップ時に振動（設定に従う）
+- [x] expo-keep-awake（設定に従う）
 
 ## ステップ3：項目の編集とリセット・削除
 
-- [ ] @gorhom/bottom-sheet で編集シート（行の長押しで開く）
-- [ ] ±1、±5、±10、数値の直接入力
-- [ ] 名前・メモ・色・カテゴリの変更（すべて自動保存）
-- [ ] リセット（取り消し可能）と削除（確認あり）
+- [x] @gorhom/bottom-sheet で編集シート（行の長押しで開く）
+- [x] ±1、±5、±10、数値の直接入力
+- [x] 名前・メモ・色・カテゴリの変更（すべて自動保存）
+- [x] リセット（取り消し可能）と削除（確認あり）
 
 ## ステップ4：カテゴリと並べ替え
 
