@@ -11,23 +11,28 @@
 
 **色**
 
-| 名前 | 値 | 用途 |
-| --- | --- | --- |
-| background | #F4F5F2 | 画面の地 |
-| surface | #FFFFFF | カード・リスト・入力欄 |
-| border | #E3E6E1 | 枠線 |
-| divider | #ECEEEA | リストの区切り線 |
-| ink | #1B1F1D | 本文・数字 |
-| ink-muted | #59615D | ラベル・補足 |
-| ink-subtle | #646C68 | ヒント文 |
-| accent | #0F6E5C | ＋ボタン、主要ボタン、PROバッジ、リンク |
-| accent-soft | #E3F1EC | 「自動保存済み」チップ、お知らせ |
-| accent-ink | #0A4F42 | accent-softの上の文字 |
-| neutral-button | #EEF0EC | −ボタン |
-| danger | #B42318 | 削除（背景 #FFF6F5、枠 #F1C9C4） |
-| ad-bg | #E4E7E2 | 広告エリア |
+ライト・ダークで値を切り替える（端末の設定に従う）。ダークの値は ADR 0009 で追加した。
 
-**項目の色（6色）**：青 #3E7CB1 / 緑 #3F9A6E / オレンジ #C9772E / 紫 #9A5BB0 / 赤 #C2414B / グレー #6B726E
+| 名前 | ライト | ダーク | 用途 |
+| --- | --- | --- | --- |
+| background | #F4F5F2 | #121513 | 画面の地 |
+| surface | #FFFFFF | #1C201E | カード・リスト・入力欄 |
+| border | #E3E6E1 | #2C322F | 枠線 |
+| divider | #ECEEEA | #252A27 | リストの区切り線 |
+| ink | #1B1F1D | #ECEFEC | 本文・数字 |
+| ink-muted | #59615D | #A9B1AC | ラベル・補足 |
+| ink-subtle | #646C68 | #8F9893 | ヒント文 |
+| accent | #0F6E5C | #45B497 | ＋ボタン、主要ボタン、PROバッジ、リンク |
+| on-accent | #FFFFFF | #0B1F1A | accentの上の文字・アイコン |
+| accent-soft | #E3F1EC | #173A31 | 「自動保存済み」チップ、お知らせ |
+| accent-ink | #0A4F42 | #9FDCC9 | accent-softの上の文字 |
+| neutral-button | #EEF0EC | #2A302D | −ボタン |
+| danger | #B42318 | #F2867B | 削除の文字 |
+| danger-bg | #FFF6F5 | #2A1716 | 削除の背景 |
+| danger-border | #F1C9C4 | #5A2A26 | 削除の枠 |
+| ad-bg | #E4E7E2 | #1F2421 | 広告エリア |
+
+**項目の色（6色、ライト・ダーク共通）**：青 #3E7CB1 / 緑 #3F9A6E / オレンジ #C9772E / 紫 #9A5BB0 / 赤 #C2414B / グレー #6B726E
 
 **文字**
 

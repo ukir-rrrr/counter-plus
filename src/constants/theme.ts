@@ -1,65 +1,88 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
+// デザイントークン（docs/design/screens.md）。className が使えない場所（ナビゲーションのテーマ、アイコンの色など）で使う
+// 値を変えるときは tailwind.config.js と src/global.css も直す
 
-import '@/global.css';
+const light = {
+  background: '#F4F5F2',
+  surface: '#FFFFFF',
+  border: '#E3E6E1',
+  divider: '#ECEEEA',
+  ink: '#1B1F1D',
+  inkMuted: '#59615D',
+  inkSubtle: '#646C68',
+  accent: '#0F6E5C',
+  onAccent: '#FFFFFF',
+  accentSoft: '#E3F1EC',
+  accentInk: '#0A4F42',
+  neutralButton: '#EEF0EC',
+  danger: '#B42318',
+  dangerBg: '#FFF6F5',
+  dangerBorder: '#F1C9C4',
+  adBg: '#E4E7E2',
+};
 
-import { Platform } from 'react-native';
+const dark: typeof light = {
+  background: '#121513',
+  surface: '#1C201E',
+  border: '#2C322F',
+  divider: '#252A27',
+  ink: '#ECEFEC',
+  inkMuted: '#A9B1AC',
+  inkSubtle: '#8F9893',
+  accent: '#45B497',
+  onAccent: '#0B1F1A',
+  accentSoft: '#173A31',
+  accentInk: '#9FDCC9',
+  neutralButton: '#2A302D',
+  danger: '#F2867B',
+  dangerBg: '#2A1716',
+  dangerBorder: '#5A2A26',
+  adBg: '#1F2421',
+};
 
-export const Colors = {
-  light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
-  },
-  dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
-  },
+export const colors = { light, dark };
+
+export type ColorScheme = keyof typeof colors;
+
+/** 項目の色。DB（counters.color）にはキーを保存する */
+export const itemColors = {
+  blue: '#3E7CB1',
+  green: '#3F9A6E',
+  orange: '#C9772E',
+  purple: '#9A5BB0',
+  red: '#C2414B',
+  gray: '#6B726E',
 } as const;
 
-export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+export type ItemColor = keyof typeof itemColors;
 
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
-  },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
-  },
-  web: {
-    sans: 'var(--font-display)',
-    serif: 'var(--font-serif)',
-    rounded: 'var(--font-rounded)',
-    mono: 'var(--font-mono)',
-  },
-});
-
-export const Spacing = {
-  half: 2,
-  one: 4,
-  two: 8,
-  three: 16,
-  four: 24,
-  five: 32,
-  six: 64,
+export const fonts = {
+  sans: 'IBMPlexSansJP_400Regular',
+  sansMedium: 'IBMPlexSansJP_500Medium',
+  sansBold: 'IBMPlexSansJP_700Bold',
+  monoMedium: 'IBMPlexMono_500Medium',
+  monoSemibold: 'IBMPlexMono_600SemiBold',
 } as const;
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
-export const MaxContentWidth = 800;
+export const fontSize = {
+  title: 17,
+  total: 34,
+  count: 22,
+  countLg: 44,
+  body: 15,
+  bodySm: 14,
+  label: 12,
+  hint: 11,
+} as const;
+
+export const radius = {
+  card: 16,
+  control: 12,
+  sheet: 22,
+} as const;
+
+export const spacing = {
+  screen: 16,
+} as const;
+
+/** タッチ領域の最小サイズ（pt） */
+export const minTouchSize = 44;
