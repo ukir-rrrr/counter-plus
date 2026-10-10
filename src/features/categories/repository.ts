@@ -8,18 +8,21 @@ const DEFAULT_CATEGORY_NAME = 'カテゴリ 1';
 
 /** カテゴリが1つも無ければ「カテゴリ 1」を作る（初回起動時） */
 export async function ensureDefaultCategory(): Promise<void> {
-  await db.transaction(async (tx) => {
-    const [{ total }] = await tx.select({ total: count() }).from(categories);
-    if (total > 0) return;
+  // expo-sqlite 版の Drizzle はトランザクションが同期実行なので、中では await せず .get() / .run() を使う
+  db.transaction((tx) => {
+    const row = tx.select({ total: count() }).from(categories).get();
+    if (row && row.total > 0) return;
 
     const now = Date.now();
-    await tx.insert(categories).values({
-      id: newId(),
-      name: DEFAULT_CATEGORY_NAME,
-      sortOrder: 0,
-      createdAt: now,
-      updatedAt: now,
-    });
+    tx.insert(categories)
+      .values({
+        id: newId(),
+        name: DEFAULT_CATEGORY_NAME,
+        sortOrder: 0,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .run();
   });
 }
 

@@ -17,6 +17,7 @@ import { colors, type ColorScheme } from '@/constants/theme';
 import { db } from '@/db/client';
 import migrations from '@/db/migrations/migrations';
 import { ensureDefaultCategory } from '@/features/categories/repository';
+import { useSettingsStore } from '@/features/settings/store';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -51,7 +52,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (!migration.success) return;
-    ensureDefaultCategory()
+    Promise.all([ensureDefaultCategory(), useSettingsStore.getState().load()])
       .then(() => setSeeded(true))
       .catch((e: unknown) => setSeedError(e instanceof Error ? e : new Error(String(e))));
   }, [migration.success]);

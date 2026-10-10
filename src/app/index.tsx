@@ -1,21 +1,60 @@
+import { useKeepAwake } from 'expo-keep-awake';
+import { Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { FlatList, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { listCategories } from '@/features/categories/repository';
+import { AdPlaceholder } from '@/features/counters/components/AdPlaceholder';
+import { AddCounterButton } from '@/features/counters/components/AddCounterButton';
+import { CounterRow } from '@/features/counters/components/CounterRow';
+import { HomeHeader } from '@/features/counters/components/HomeHeader';
+import { Toolbar } from '@/features/counters/components/Toolbar';
+import { TotalCard } from '@/features/counters/components/TotalCard';
+import { useCountersStore } from '@/features/counters/store';
+import { useSettingsStore } from '@/features/settings/store';
 
-// 仮のホーム画面。ステップ2でリストとカウントに置き換える
+function KeepAwake() {
+  useKeepAwake();
+  return null;
+}
+
 export default function Home() {
-  const [categoryName, setCategoryName] = useState<string>();
+  const insets = useSafeAreaInsets();
+  const [categoryName, setCategoryName] = useState('');
+  const ids = useCountersStore((s) => s.ids);
+  const load = useCountersStore((s) => s.load);
+  const keepAwake = useSettingsStore((s) => s.keepAwake);
 
+  // カテゴリの切り替えはステップ4。今は先頭のカテゴリを表示する
   useEffect(() => {
-    listCategories().then((rows) => setCategoryName(rows[0]?.name));
-  }, []);
+    listCategories().then((rows) => {
+      const first = rows[0];
+      if (!first) return;
+      setCategoryName(first.name);
+      load(first.id);
+    });
+  }, [load]);
 
   return (
-    <View className="flex-1 items-center justify-center gap-2 bg-background px-screen">
-      <Text className="font-sans-bold text-title text-ink">カウンター＋</Text>
-      <Text className="font-sans text-body text-ink-muted">{categoryName ?? ''}</Text>
-      <Text className="font-mono-semibold text-total text-accent">0</Text>
+    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+      <Stack.Screen options={{ headerShown: false }} />
+      {keepAwake && <KeepAwake />}
+      <HomeHeader categoryName={categoryName} />
+      <TotalCard />
+      <View className="mx-screen flex-1">
+        <FlatList
+          data={ids}
+          keyExtractor={(id) => id}
+          renderItem={({ item }) => <CounterRow id={item} />}
+          ListFooterComponent={AddCounterButton}
+          className="grow-0 rounded-card border border-border bg-surface"
+        />
+      </View>
+      <Text className="px-screen pt-2 text-center font-sans text-hint text-ink-subtle">行を長押しで編集・並べ替え</Text>
+      <Toolbar />
+      <AdPlaceholder />
+      <View style={{ height: insets.bottom }} />
     </View>
   );
 }
