@@ -13,7 +13,9 @@ Expo SDK 57を土台にし、定番で情報の多いライブラリだけを使
 | 土台 | Expo（React Native）＋TypeScript | ビルドとストア提出まで一貫して扱える |
 | 画面遷移 | Expo Router（`src/app/`） | ファイルを置くだけで画面が増える |
 | データ保存 | expo-sqlite ＋ Drizzle ORM | 端末内で完結。履歴や並べ替えをSQLで素直に扱える。Drizzleで型安全にする |
+| ID生成 | expo-crypto | UUIDを作る（`randomUUID()`） |
 | 画面の状態 | Zustand | カウントを即座に画面へ反映する。小さく覚えることが少ない |
+| フォント | @expo-google-fonts（IBM Plex Sans JP / IBM Plex Mono）＋ expo-font | 使う太さだけを読み込む |
 | スタイルとUI部品 | NativeWind ＋ React Native Reusables | Tailwindの書き方で独自の見た目を作れる。部品はコードをコピーして自分で直せる |
 | ボトムシート | @gorhom/bottom-sheet | 「項目の編集」シート。スワイプで閉じるなどの動きが安定している |
 | 並べ替えのUI | react-native-reanimated ＋ react-native-gesture-handler ＋ react-native-draggable-flatlist | 長押しでの移動を滑らかにする |

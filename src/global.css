@@ -1,9 +1,44 @@
+/* デザイントークン（docs/design/screens.md）。値を変えるときは src/constants/theme.ts も直す */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
-  --font-display:
-    Spline Sans, Inter, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji,
-    Segoe UI Symbol, Noto Color Emoji;
-  --font-mono:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
-  --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
-  --font-serif: Georgia, 'Times New Roman', serif;
+  --color-background: #f4f5f2;
+  --color-surface: #ffffff;
+  --color-border: #e3e6e1;
+  --color-divider: #eceeea;
+  --color-ink: #1b1f1d;
+  --color-ink-muted: #59615d;
+  --color-ink-subtle: #646c68;
+  --color-accent: #0f6e5c;
+  --color-on-accent: #ffffff;
+  --color-accent-soft: #e3f1ec;
+  --color-accent-ink: #0a4f42;
+  --color-neutral-button: #eef0ec;
+  --color-danger: #b42318;
+  --color-danger-bg: #fff6f5;
+  --color-danger-border: #f1c9c4;
+  --color-ad-bg: #e4e7e2;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: #121513;
+    --color-surface: #1c201e;
+    --color-border: #2c322f;
+    --color-divider: #252a27;
+    --color-ink: #ecefec;
+    --color-ink-muted: #a9b1ac;
+    --color-ink-subtle: #8f9893;
+    --color-accent: #45b497;
+    --color-on-accent: #0b1f1a;
+    --color-accent-soft: #173a31;
+    --color-accent-ink: #9fdcc9;
+    --color-neutral-button: #2a302d;
+    --color-danger: #f2867b;
+    --color-danger-bg: #2a1716;
+    --color-danger-border: #5a2a26;
+    --color-ad-bg: #1f2421;
+  }
 }

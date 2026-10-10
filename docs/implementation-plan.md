@@ -5,17 +5,17 @@ AIに頼むときは「implementation-plan.md のステップ N を実装して�
 
 ## ステップ0：テンプレートの整理
 
-- [ ] テンプレートのサンプル画面（タブ、explore など）を片付ける（`npm run reset-project` を使うか手で削除）
-- [ ] app.json の name を「カウンター＋」に、bundleIdentifier を設定する
-- [ ] 縦向き固定、ダークモード対応（userInterfaceStyle: automatic）を確認する
+- [x] テンプレートのサンプル画面（タブ、explore など）を片付ける（`npm run reset-project` を使うか手で削除）
+- [x] app.json の name を「カウンター＋」に、bundleIdentifier を設定する
+- [x] 縦向き固定、ダークモード対応（userInterfaceStyle: automatic）を確認する
 
 ## ステップ1：土台
 
-- [ ] NativeWind を導入し、`docs/design/screens.md` のトークンを tailwind.config と `src/constants/theme.ts` に定義する
-- [ ] IBM Plex Sans JP / IBM Plex Mono を読み込む
-- [ ] expo-sqlite ＋ Drizzle を導入し、`src/db/schema.ts` に4テーブル（categories / counters / count_events / app_settings）を定義する
-- [ ] マイグレーションを用意し、`src/app/_layout.tsx` で起動時に実行する
-- [ ] 初回起動時に「カテゴリ 1」を1つ作る
+- [x] NativeWind を導入し、`docs/design/screens.md` のトークンを tailwind.config と `src/constants/theme.ts` に定義する
+- [x] IBM Plex Sans JP / IBM Plex Mono を読み込む
+- [x] expo-sqlite ＋ Drizzle を導入し、`src/db/schema.ts` に4テーブル（categories / counters / count_events / app_settings）を定義する
+- [x] マイグレーションを用意し、`src/app/_layout.tsx` で起動時に実行する
+- [x] 初回起動時に「カテゴリ 1」を1つ作る
 
 ## ステップ2：ホーム（リスト）とカウント
 
