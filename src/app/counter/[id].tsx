@@ -18,6 +18,7 @@ import { DangerActions } from '@/features/counters/components/edit/DangerActions
 import { EditHeader } from '@/features/counters/components/edit/EditHeader';
 import { LabeledInput } from '@/features/counters/components/edit/LabeledInput';
 import { UndoToast } from '@/features/counters/components/UndoToast';
+import { claimLeave } from '@/features/counters/leaveOnce';
 import { useCountersStore } from '@/features/counters/store';
 import { tapHaptic } from '@/lib/haptics';
 
@@ -32,8 +33,6 @@ export default function EditCounter() {
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const sheetRef = useRef<BottomSheet>(null);
-  // シートが閉じ終わったときに削除するか（削除してから閉じると中身が先に消えてしまうため）
-  const deleteOnClose = useRef(false);
   const leaving = useRef(false);
 
   const counter = useCountersStore((s) => s.byId[id]);
@@ -44,12 +43,14 @@ export default function EditCounter() {
   // 名前を空にしたまま離れたときに戻す名前
   const [initialName] = useState(counter?.name ?? '');
 
-  const leave = () => {
-    if (leaving.current) return;
-    leaving.current = true;
-    if (deleteOnClose.current) remove(id);
+  const navigateAway = () => {
     if (router.canGoBack()) router.back();
     else router.replace('/');
+  };
+
+  const leave = () => {
+    if (!claimLeave(leaving)) return;
+    navigateAway();
   };
 
   // 存在しない項目を開いたときはすぐ戻る
@@ -68,8 +69,12 @@ export default function EditCounter() {
         text: '削除',
         style: 'destructive',
         onPress: () => {
-          deleteOnClose.current = true;
-          close();
+          // 先に leaving を立ててから remove する。
+          // そうしないと counter が消えた再描画の useEffect が leave() を呼び、
+          // router.back() が二重になって GO_BACK エラーになる。
+          if (!claimLeave(leaving)) return;
+          remove(id);
+          navigateAway();
         },
       },
     ]);
@@ -80,6 +85,7 @@ export default function EditCounter() {
       ref={sheetRef}
       enablePanDownToClose
       enableDynamicSizing
+      topInset={insets.top}
       maxDynamicContentSize={height - insets.top}
       keyboardBehavior="interactive"
       keyboardBlurBehavior="restore"
@@ -87,12 +93,18 @@ export default function EditCounter() {
       backdropComponent={Backdrop}
       onClose={leave}
       backgroundStyle={{ backgroundColor: c.surface, borderRadius: radius.sheet }}
-      handleIndicatorStyle={{ backgroundColor: c.border, width: 36, height: 5 }}>
+      handleIndicatorStyle={{ backgroundColor: c.border, width: 36, height: 5 }}
+      accessible={false}>
       <BottomSheetScrollView keyboardShouldPersistTaps="handled">
-        <View className="gap-4 px-5 pt-2" style={{ paddingBottom: Math.max(insets.bottom, 20) }}>
+        <View
+          testID="edit-sheet"
+          accessibilityViewIsModal
+          className="gap-4 px-5 pt-2"
+          style={{ paddingBottom: Math.max(insets.bottom, 20) }}>
           <EditHeader onDone={close} />
           <CountAdjuster id={id} />
           <LabeledInput
+            testID="name-input"
             label="項目名"
             value={counter.name}
             onChangeText={(name) => update(id, { name })}
@@ -101,6 +113,7 @@ export default function EditCounter() {
             }}
           />
           <LabeledInput
+            testID="memo-input"
             label="メモ（置き場所など）"
             value={counter.memo}
             onChangeText={(memo) => update(id, { memo })}

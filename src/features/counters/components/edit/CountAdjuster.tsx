@@ -39,6 +39,7 @@ export function CountAdjuster({ id }: { id: string }) {
     <View className="gap-3 rounded-card bg-background p-3.5">
       <View className="flex-row items-center justify-between gap-3">
         <Pressable
+          testID="decrement-button"
           accessibilityRole="button"
           accessibilityLabel="1減らす"
           onPress={() => apply(-1)}
@@ -49,6 +50,7 @@ export function CountAdjuster({ id }: { id: string }) {
           <Text className="font-sans text-hint text-ink-muted">現在の数（タップで直接入力）</Text>
           {draft === null ? (
             <Pressable
+              testID="count-display"
               accessibilityRole="button"
               accessibilityLabel={`現在の数 ${count}`}
               accessibilityHint="タップで数を直接入力"
@@ -64,6 +66,7 @@ export function CountAdjuster({ id }: { id: string }) {
             </Pressable>
           ) : (
             <SheetTextInput
+              testID="count-input"
               accessibilityLabel="数を入力"
               value={draft}
               onChangeText={(text: string) => setDraft(text.replace(/[^0-9]/g, ''))}
@@ -80,6 +83,7 @@ export function CountAdjuster({ id }: { id: string }) {
           )}
         </View>
         <Pressable
+          testID="increment-button"
           accessibilityRole="button"
           accessibilityLabel="1増やす"
           onPress={() => apply(1)}

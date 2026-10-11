@@ -9,7 +9,9 @@ export function EditHeader({ onDone }: { onDone: () => void }) {
         項目を編集
       </Text>
       <Pressable
+        testID="done-button"
         accessibilityRole="button"
+        accessibilityLabel="完了"
         onPress={onDone}
         className="h-11 w-16 items-end justify-center active:opacity-70">
         <Text className="font-sans-bold text-body text-accent">完了</Text>

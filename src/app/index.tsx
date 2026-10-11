@@ -1,10 +1,12 @@
 import { useKeepAwake } from 'expo-keep-awake';
-import { Stack } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { FlatList, Text, View } from 'react-native';
+import { Stack, useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
+import { Text, View } from 'react-native';
+import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { listCategories } from '@/features/categories/repository';
+import { saveCounterSortOrder } from '@/features/categories/repository';
+import { useCategoriesStore } from '@/features/categories/store';
 import { AdPlaceholder } from '@/features/counters/components/AdPlaceholder';
 import { AddCounterButton } from '@/features/counters/components/AddCounterButton';
 import { CounterRow } from '@/features/counters/components/CounterRow';
@@ -14,28 +16,63 @@ import { TotalCard } from '@/features/counters/components/TotalCard';
 import { UndoToast } from '@/features/counters/components/UndoToast';
 import { useCountersStore } from '@/features/counters/store';
 import { useSettingsStore } from '@/features/settings/store';
+import { tapHaptic } from '@/lib/haptics';
 
 function KeepAwake() {
   useKeepAwake();
   return null;
 }
 
+type CounterItem = { id: string };
+
+function DraggableCounterRow({ item, drag, isActive, getIndex }: RenderItemParams<CounterItem>) {
+  return (
+    <ScaleDecorator>
+      <CounterRow id={item.id} index={getIndex() ?? 0} onDrag={drag} isActive={isActive} />
+    </ScaleDecorator>
+  );
+}
+
 export default function Home() {
   const insets = useSafeAreaInsets();
-  const [categoryName, setCategoryName] = useState('');
   const ids = useCountersStore((s) => s.ids);
-  const load = useCountersStore((s) => s.load);
+  const countersLoad = useCountersStore((s) => s.load);
   const keepAwake = useSettingsStore((s) => s.keepAwake);
 
-  // カテゴリの切り替えはステップ4。今は先頭のカテゴリを表示する
-  useEffect(() => {
-    listCategories().then((rows) => {
-      const first = rows[0];
-      if (!first) return;
-      setCategoryName(first.name);
-      load(first.id);
-    });
-  }, [load]);
+  const categories = useCategoriesStore((s) => s.categories);
+  const selectedId = useCategoriesStore((s) => s.selectedId);
+  const categoriesLoad = useCategoriesStore((s) => s.load);
+
+  const selectedCategory = categories.find((c) => c.id === selectedId);
+  const categoryName = selectedCategory?.name ?? '';
+
+  // 画面にフォーカスが戻ったときにカテゴリと項目を読み込む
+  useFocusEffect(
+    useCallback(() => {
+      categoriesLoad().then(() => {
+        const state = useCategoriesStore.getState();
+        if (state.selectedId) {
+          countersLoad(state.selectedId);
+        }
+      });
+    }, [categoriesLoad, countersLoad])
+  );
+
+  const handleDragEnd = ({ data }: { data: CounterItem[] }) => {
+    const newIds = data.map((item) => item.id);
+    // storeのidsを更新
+    useCountersStore.setState({ ids: newIds });
+    // DBに保存
+    saveCounterSortOrder(newIds);
+    tapHaptic();
+  };
+
+  const listData: CounterItem[] = ids.map((id) => ({ id }));
+
+  const renderItem = useCallback(
+    (params: RenderItemParams<CounterItem>) => <DraggableCounterRow {...params} />,
+    []
+  );
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
@@ -44,19 +81,20 @@ export default function Home() {
       <HomeHeader categoryName={categoryName} />
       <TotalCard />
       <View className="mx-screen flex-1">
-        <FlatList
-          data={ids}
-          keyExtractor={(id) => id}
-          renderItem={({ item }) => <CounterRow id={item} />}
+        <DraggableFlatList
+          data={listData}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          onDragEnd={handleDragEnd}
           ListFooterComponent={AddCounterButton}
+          containerStyle={{ flexGrow: 0 }}
           className="grow-0 rounded-card border border-border bg-surface"
         />
-        {/* 編集シートでリセットしてすぐ閉じても、ここで取り消せる */}
         <View className="absolute bottom-2 left-2 right-2">
           <UndoToast />
         </View>
       </View>
-      <Text className="px-screen pt-2 text-center font-sans text-hint text-ink-subtle">行を長押しで編集・並べ替え</Text>
+      <Text className="px-screen pt-2 text-center font-sans text-hint text-ink-subtle">行を長押しで編集、左のハンドルで並べ替え</Text>
       <Toolbar />
       <AdPlaceholder />
       <View style={{ height: insets.bottom }} />

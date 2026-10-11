@@ -62,6 +62,15 @@ function enqueueWrite(write: () => void, onError: () => void): void {
     });
 }
 
+/** 未完了の書き込みが終わるまで待つ（フォーカス時の再読込が古いDBを見ないようにする） */
+async function waitForWrites(): Promise<void> {
+  let current: Promise<void>;
+  do {
+    current = writeQueue;
+    await current;
+  } while (current !== writeQueue);
+}
+
 let undoTimer: ReturnType<typeof setTimeout> | undefined;
 
 export const useCountersStore = create<CountersState>((set, get) => {
@@ -109,6 +118,8 @@ export const useCountersStore = create<CountersState>((set, get) => {
     byId: {},
     pendingUndo: null,
     load: async (categoryId) => {
+      // 削除などの書き込みが終わる前に読むと、画面が古い件数に戻る
+      await waitForWrites();
       const rows = await listCounters(categoryId);
       set({
         categoryId,
