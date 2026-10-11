@@ -10,15 +10,18 @@ import { useThemeColors } from '@/constants/use-theme-colors';
 import { longPressHaptic, tapHaptic } from '@/lib/haptics';
 
 import { useCountersStore } from '../store';
+import { dragHandleTestId } from './dragHandleTestId';
 
 type CounterRowProps = {
   id: string;
+  /** リスト上の位置。ハンドルの testID に使い、実行ごとの UUID に依存しない */
+  index?: number;
   /** ドラッグハンドルを表示し、押した時点でドラッグを開始する */
   onDrag?: () => void;
   isActive?: boolean;
 };
 
-export const CounterRow = memo(function CounterRow({ id, onDrag, isActive }: CounterRowProps) {
+export const CounterRow = memo(function CounterRow({ id, index = 0, onDrag, isActive }: CounterRowProps) {
   const c = useThemeColors();
   const counter = useCountersStore((s) => s.byId[id]);
   const increment = useCountersStore((s) => s.increment);
@@ -47,7 +50,7 @@ export const CounterRow = memo(function CounterRow({ id, onDrag, isActive }: Cou
       className="h-14 flex-row items-center gap-2 border-b border-divider bg-surface pl-3.5 pr-1.5">
       {onDrag && (
         <Pressable
-          testID={`drag-handle-${id}`}
+          testID={dragHandleTestId(index)}
           accessibilityRole="button"
           accessibilityLabel="ドラッグして並べ替え"
           onPressIn={() => {

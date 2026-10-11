@@ -1,5 +1,14 @@
+import { dragHandleTestId } from '../components/dragHandleTestId';
+
 // CounterRow のロジックテスト
 // 名前エリアの長押しで編集、ハンドルの onPressIn でドラッグ開始が共存すること
+
+describe('dragHandleTestId', () => {
+  it('実行ごとの UUID ではなく、リスト位置の安定した ID を返す', () => {
+    expect(dragHandleTestId(0)).toBe('drag-handle-0');
+    expect(dragHandleTestId(2)).toBe('drag-handle-2');
+  });
+});
 
 describe('CounterRow interaction logic', () => {
   describe('長押しで編集シートを開く（リグレッション防止）', () => {

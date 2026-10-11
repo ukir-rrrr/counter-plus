@@ -25,10 +25,10 @@ function KeepAwake() {
 
 type CounterItem = { id: string };
 
-function DraggableCounterRow({ item, drag, isActive }: RenderItemParams<CounterItem>) {
+function DraggableCounterRow({ item, drag, isActive, getIndex }: RenderItemParams<CounterItem>) {
   return (
     <ScaleDecorator>
-      <CounterRow id={item.id} onDrag={drag} isActive={isActive} />
+      <CounterRow id={item.id} index={getIndex() ?? 0} onDrag={drag} isActive={isActive} />
     </ScaleDecorator>
   );
 }

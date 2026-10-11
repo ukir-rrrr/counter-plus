@@ -85,6 +85,7 @@ export default function EditCounter() {
       ref={sheetRef}
       enablePanDownToClose
       enableDynamicSizing
+      topInset={insets.top}
       maxDynamicContentSize={height - insets.top}
       keyboardBehavior="interactive"
       keyboardBlurBehavior="restore"
@@ -97,6 +98,7 @@ export default function EditCounter() {
       <BottomSheetScrollView keyboardShouldPersistTaps="handled">
         <View
           testID="edit-sheet"
+          accessibilityViewIsModal
           className="gap-4 px-5 pt-2"
           style={{ paddingBottom: Math.max(insets.bottom, 20) }}>
           <EditHeader onDone={close} />
