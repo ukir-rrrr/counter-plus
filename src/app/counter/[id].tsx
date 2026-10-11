@@ -32,8 +32,6 @@ export default function EditCounter() {
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const sheetRef = useRef<BottomSheet>(null);
-  // シートが閉じ終わったときに削除するか（削除してから閉じると中身が先に消えてしまうため）
-  const deleteOnClose = useRef(false);
   const leaving = useRef(false);
 
   const counter = useCountersStore((s) => s.byId[id]);
@@ -47,7 +45,6 @@ export default function EditCounter() {
   const leave = () => {
     if (leaving.current) return;
     leaving.current = true;
-    if (deleteOnClose.current) remove(id);
     if (router.canGoBack()) router.back();
     else router.replace('/');
   };
@@ -68,8 +65,11 @@ export default function EditCounter() {
         text: '削除',
         style: 'destructive',
         onPress: () => {
-          deleteOnClose.current = true;
-          close();
+          // Alert後に close() を呼んでも onClose が発火しないことがあるため、
+          // 削除とナビゲーションを直接行う
+          remove(id);
+          if (router.canGoBack()) router.back();
+          else router.replace('/');
         },
       },
     ]);
@@ -87,12 +87,14 @@ export default function EditCounter() {
       backdropComponent={Backdrop}
       onClose={leave}
       backgroundStyle={{ backgroundColor: c.surface, borderRadius: radius.sheet }}
-      handleIndicatorStyle={{ backgroundColor: c.border, width: 36, height: 5 }}>
+      handleIndicatorStyle={{ backgroundColor: c.border, width: 36, height: 5 }}
+      accessibilityLabel="項目を編集">
       <BottomSheetScrollView keyboardShouldPersistTaps="handled">
         <View className="gap-4 px-5 pt-2" style={{ paddingBottom: Math.max(insets.bottom, 20) }}>
           <EditHeader onDone={close} />
           <CountAdjuster id={id} />
           <LabeledInput
+            testID="name-input"
             label="項目名"
             value={counter.name}
             onChangeText={(name) => update(id, { name })}
@@ -101,6 +103,7 @@ export default function EditCounter() {
             }}
           />
           <LabeledInput
+            testID="memo-input"
             label="メモ（置き場所など）"
             value={counter.memo}
             onChangeText={(memo) => update(id, { memo })}

@@ -10,18 +10,21 @@ export function LabeledInput({
   onChangeText,
   onBlur,
   placeholder,
+  testID,
 }: {
   label: string;
   value: string;
   onChangeText: (text: string) => void;
   onBlur?: () => void;
   placeholder?: string;
+  testID?: string;
 }) {
   const c = useThemeColors();
   return (
     <View className="gap-1.5">
       <Text className="font-sans-medium text-label text-ink-muted">{label}</Text>
       <SheetTextInput
+        testID={testID}
         accessibilityLabel={label}
         value={value}
         onChangeText={onChangeText}

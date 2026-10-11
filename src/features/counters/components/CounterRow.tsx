@@ -52,11 +52,14 @@ export const CounterRow = memo(function CounterRow({ id, onDrag, isActive }: Cou
   return (
     <GestureDetector gesture={rowLongPress}>
       <View
+        testID={`counter-row-${id}`}
+        accessibilityLabel={`${counter.name}、数 ${counter.count}`}
         className="h-14 flex-row items-center gap-2 border-b border-divider bg-surface pl-3.5 pr-1.5"
         accessibilityHint="長押しで編集">
         {onDrag && dragHandleLongPress && (
           <GestureDetector gesture={dragHandleLongPress}>
             <View
+              testID={`drag-handle-${id}`}
               accessibilityRole="button"
               accessibilityLabel="ドラッグして並べ替え"
               className="h-11 w-8 -ml-1 shrink-0 items-center justify-center">
@@ -76,6 +79,7 @@ export const CounterRow = memo(function CounterRow({ id, onDrag, isActive }: Cou
           )}
         </View>
         <Pressable
+          testID={`row-decrement-${id}`}
           accessibilityRole="button"
           accessibilityLabel={`${counter.name}を1減らす`}
           onPress={() => {
@@ -93,6 +97,7 @@ export const CounterRow = memo(function CounterRow({ id, onDrag, isActive }: Cou
           {counter.count}
         </Text>
         <Pressable
+          testID={`row-increment-${id}`}
           accessibilityRole="button"
           accessibilityLabel={`${counter.name}を1増やす`}
           onPress={() => {
