@@ -135,13 +135,10 @@ export function FolderIcon({ color, size = 18 }: IconProps) {
 
 export function DragHandleIcon({ color, size = 18 }: IconProps) {
   return (
-    <Icon color={color} size={size} strokeWidth={1.8}>
-      <Path d="M8 6h.01" />
-      <Path d="M16 6h.01" />
-      <Path d="M8 12h.01" />
-      <Path d="M16 12h.01" />
-      <Path d="M8 18h.01" />
-      <Path d="M16 18h.01" />
+    <Icon color={color} size={size} strokeWidth={2}>
+      <Path d="M4 8h16" />
+      <Path d="M4 12h16" />
+      <Path d="M4 16h16" />
     </Icon>
   );
 }

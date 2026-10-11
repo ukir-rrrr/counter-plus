@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { memo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
-import { MinusIcon, PlusIcon } from '@/components/icons';
+import { DragHandleIcon, MinusIcon, PlusIcon } from '@/components/icons';
 import { itemColors, type ItemColor } from '@/constants/theme';
 import { useThemeColors } from '@/constants/use-theme-colors';
 import { longPressHaptic, tapHaptic } from '@/lib/haptics';
@@ -11,11 +11,12 @@ import { useCountersStore } from '../store';
 
 type CounterRowProps = {
   id: string;
-  onLongPress?: () => void;
+  /** ドラッグハンドルを表示し、長押しでドラッグを開始する */
+  onDrag?: () => void;
   isActive?: boolean;
 };
 
-export const CounterRow = memo(function CounterRow({ id, onLongPress, isActive }: CounterRowProps) {
+export const CounterRow = memo(function CounterRow({ id, onDrag, isActive }: CounterRowProps) {
   const c = useThemeColors();
   const counter = useCountersStore((s) => s.byId[id]);
   const increment = useCountersStore((s) => s.increment);
@@ -24,23 +25,31 @@ export const CounterRow = memo(function CounterRow({ id, onLongPress, isActive }
 
   const dotColor = itemColors[counter.color as ItemColor] ?? itemColors.gray;
 
-  const handleLongPress = () => {
-    if (onLongPress) {
-      longPressHaptic();
-      onLongPress();
-    } else {
-      longPressHaptic();
-      router.push({ pathname: '/counter/[id]', params: { id } });
-    }
+  const openEditSheet = () => {
+    longPressHaptic();
+    router.push({ pathname: '/counter/[id]', params: { id } });
   };
 
   return (
     <Pressable
       accessibilityHint="長押しで編集"
-      onLongPress={handleLongPress}
+      onLongPress={openEditSheet}
       delayLongPress={200}
       disabled={isActive}
       className="h-14 flex-row items-center gap-2 border-b border-divider bg-surface pl-3.5 pr-1.5 active:bg-background">
+      {onDrag && (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="ドラッグして並べ替え"
+          onLongPress={() => {
+            longPressHaptic();
+            onDrag();
+          }}
+          delayLongPress={100}
+          className="h-11 w-8 -ml-1 shrink-0 items-center justify-center active:opacity-70">
+          <DragHandleIcon color={c.inkSubtle} size={20} />
+        </Pressable>
+      )}
       <View className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: dotColor }} />
       <View className="min-w-0 flex-1 gap-px">
         <Text numberOfLines={1} className="font-sans-medium text-body-sm text-ink">

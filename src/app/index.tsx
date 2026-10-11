@@ -28,7 +28,7 @@ type CounterItem = { id: string };
 function DraggableCounterRow({ item, drag, isActive }: RenderItemParams<CounterItem>) {
   return (
     <ScaleDecorator>
-      <CounterRow id={item.id} onLongPress={drag} isActive={isActive} />
+      <CounterRow id={item.id} onDrag={drag} isActive={isActive} />
     </ScaleDecorator>
   );
 }
@@ -95,7 +95,7 @@ export default function Home() {
           <UndoToast />
         </View>
       </View>
-      <Text className="px-screen pt-2 text-center font-sans text-hint text-ink-subtle">行を長押しで編集・並べ替え</Text>
+      <Text className="px-screen pt-2 text-center font-sans text-hint text-ink-subtle">行を長押しで編集、左のハンドルで並べ替え</Text>
       <Toolbar />
       <AdPlaceholder />
       <View style={{ height: insets.bottom }} />
