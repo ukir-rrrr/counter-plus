@@ -114,3 +114,61 @@ export function SortIcon({ color, size = 18 }: IconProps) {
     </Icon>
   );
 }
+
+export function CloseIcon({ color, size = 20 }: IconProps) {
+  return (
+    <Icon color={color} size={size} strokeWidth={2.2}>
+      <Path d="M6 6l12 12" />
+      <Path d="M18 6L6 18" />
+    </Icon>
+  );
+}
+
+export function FolderIcon({ color, size = 18 }: IconProps) {
+  return (
+    <Icon color={color} size={size} strokeWidth={1.9}>
+      <Path d="M4 5h16v5H4z" />
+      <Path d="M4 14h16v5H4z" />
+    </Icon>
+  );
+}
+
+export function DragHandleIcon({ color, size = 18 }: IconProps) {
+  return (
+    <Icon color={color} size={size} strokeWidth={1.8}>
+      <Path d="M8 6h.01" />
+      <Path d="M16 6h.01" />
+      <Path d="M8 12h.01" />
+      <Path d="M16 12h.01" />
+      <Path d="M8 18h.01" />
+      <Path d="M16 18h.01" />
+    </Icon>
+  );
+}
+
+export function TrashIcon({ color, size = 18 }: IconProps) {
+  return (
+    <Icon color={color} size={size} strokeWidth={1.9}>
+      <Path d="M3 6h18" />
+      <Path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      <Path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+    </Icon>
+  );
+}
+
+export function EditIcon({ color, size = 18 }: IconProps) {
+  return (
+    <Icon color={color} size={size} strokeWidth={1.9}>
+      <Path d="M12 20h9" />
+      <Path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </Icon>
+  );
+}
+
+export function CheckCircleIcon({ color, size = 20 }: IconProps) {
+  return (
+    <Icon color={color} size={size} strokeWidth={2.6}>
+      <Path d="M5 12l5 5 9-10" />
+    </Icon>
+  );
+}

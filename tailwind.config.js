@@ -46,7 +46,9 @@ module.exports = {
       fontSize: {
         title: '17px',
         total: '34px',
+        'total-sm': '30px',
         count: '22px',
+        'count-sm': '18px',
         'count-lg': '44px',
         body: '15px',
         'body-sm': '14px',

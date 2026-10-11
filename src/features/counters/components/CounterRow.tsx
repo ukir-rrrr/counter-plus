@@ -9,9 +9,14 @@ import { longPressHaptic, tapHaptic } from '@/lib/haptics';
 
 import { useCountersStore } from '../store';
 
-export const CounterRow = memo(function CounterRow({ id }: { id: string }) {
+type CounterRowProps = {
+  id: string;
+  onLongPress?: () => void;
+  isActive?: boolean;
+};
+
+export const CounterRow = memo(function CounterRow({ id, onLongPress, isActive }: CounterRowProps) {
   const c = useThemeColors();
-  // この行の項目だけを購読し、他の行が変わっても再描画しない
   const counter = useCountersStore((s) => s.byId[id]);
   const increment = useCountersStore((s) => s.increment);
   const decrement = useCountersStore((s) => s.decrement);
@@ -19,14 +24,23 @@ export const CounterRow = memo(function CounterRow({ id }: { id: string }) {
 
   const dotColor = itemColors[counter.color as ItemColor] ?? itemColors.gray;
 
+  const handleLongPress = () => {
+    if (onLongPress) {
+      longPressHaptic();
+      onLongPress();
+    } else {
+      longPressHaptic();
+      router.push({ pathname: '/counter/[id]', params: { id } });
+    }
+  };
+
   return (
     <Pressable
       accessibilityHint="長押しで編集"
-      onLongPress={() => {
-        longPressHaptic();
-        router.push({ pathname: '/counter/[id]', params: { id } });
-      }}
-      className="h-14 flex-row items-center gap-2 border-b border-divider pl-3.5 pr-1.5 active:bg-background">
+      onLongPress={handleLongPress}
+      delayLongPress={200}
+      disabled={isActive}
+      className="h-14 flex-row items-center gap-2 border-b border-divider bg-surface pl-3.5 pr-1.5 active:bg-background">
       <View className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: dotColor }} />
       <View className="min-w-0 flex-1 gap-px">
         <Text numberOfLines={1} className="font-sans-medium text-body-sm text-ink">
