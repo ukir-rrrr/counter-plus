@@ -1,6 +1,8 @@
 import { router } from 'expo-router';
 import { memo } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { runOnJS } from 'react-native-reanimated';
 
 import { DragHandleIcon, MinusIcon, PlusIcon } from '@/components/icons';
 import { itemColors, type ItemColor } from '@/constants/theme';
@@ -30,62 +32,77 @@ export const CounterRow = memo(function CounterRow({ id, onDrag, isActive }: Cou
     router.push({ pathname: '/counter/[id]', params: { id } });
   };
 
+  // 行全体の長押しで編集シートを開く（RNGHジェスチャー）
+  const rowLongPress = Gesture.LongPress()
+    .minDuration(200)
+    .onStart(() => {
+      runOnJS(openEditSheet)();
+    });
+
+  // ドラッグハンドルの長押しでドラッグを開始
+  const dragHandleLongPress = onDrag
+    ? Gesture.LongPress()
+        .minDuration(100)
+        .onStart(() => {
+          runOnJS(longPressHaptic)();
+          runOnJS(onDrag)();
+        })
+    : null;
+
   return (
-    <Pressable
-      accessibilityHint="長押しで編集"
-      onLongPress={openEditSheet}
-      delayLongPress={200}
-      disabled={isActive}
-      className="h-14 flex-row items-center gap-2 border-b border-divider bg-surface pl-3.5 pr-1.5 active:bg-background">
-      {onDrag && (
+    <GestureDetector gesture={rowLongPress}>
+      <View
+        className="h-14 flex-row items-center gap-2 border-b border-divider bg-surface pl-3.5 pr-1.5"
+        accessibilityHint="長押しで編集">
+        {onDrag && dragHandleLongPress && (
+          <GestureDetector gesture={dragHandleLongPress}>
+            <View
+              accessibilityRole="button"
+              accessibilityLabel="ドラッグして並べ替え"
+              className="h-11 w-8 -ml-1 shrink-0 items-center justify-center">
+              <DragHandleIcon color={c.inkSubtle} size={20} />
+            </View>
+          </GestureDetector>
+        )}
+        <View className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: dotColor }} />
+        <View className="min-w-0 flex-1 gap-px">
+          <Text numberOfLines={1} className="font-sans-medium text-body-sm text-ink">
+            {counter.name}
+          </Text>
+          {counter.memo !== '' && (
+            <Text numberOfLines={1} className="font-sans text-hint text-ink-subtle">
+              {counter.memo}
+            </Text>
+          )}
+        </View>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="ドラッグして並べ替え"
-          onLongPress={() => {
-            longPressHaptic();
-            onDrag();
+          accessibilityLabel={`${counter.name}を1減らす`}
+          onPress={() => {
+            if (decrement(id)) tapHaptic();
           }}
-          delayLongPress={100}
-          className="h-11 w-8 -ml-1 shrink-0 items-center justify-center active:opacity-70">
-          <DragHandleIcon color={c.inkSubtle} size={20} />
+          disabled={isActive}
+          className="h-11 w-11 shrink-0 items-center justify-center rounded-control bg-neutral-button active:opacity-70">
+          <MinusIcon color={c.ink} />
         </Pressable>
-      )}
-      <View className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: dotColor }} />
-      <View className="min-w-0 flex-1 gap-px">
-        <Text numberOfLines={1} className="font-sans-medium text-body-sm text-ink">
-          {counter.name}
+        <Text
+          className="w-[52px] shrink-0 text-center font-mono-semibold text-count text-ink"
+          style={{ fontVariant: ['tabular-nums'] }}
+          numberOfLines={1}
+          adjustsFontSizeToFit>
+          {counter.count}
         </Text>
-        {counter.memo !== '' && (
-          <Text numberOfLines={1} className="font-sans text-hint text-ink-subtle">
-            {counter.memo}
-          </Text>
-        )}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${counter.name}を1増やす`}
+          onPress={() => {
+            if (increment(id)) tapHaptic();
+          }}
+          disabled={isActive}
+          className="h-11 w-14 shrink-0 items-center justify-center rounded-control bg-accent active:opacity-80">
+          <PlusIcon color={c.onAccent} />
+        </Pressable>
       </View>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`${counter.name}を1減らす`}
-        onPress={() => {
-          if (decrement(id)) tapHaptic();
-        }}
-        className="h-11 w-11 shrink-0 items-center justify-center rounded-control bg-neutral-button active:opacity-70">
-        <MinusIcon color={c.ink} />
-      </Pressable>
-      <Text
-        className="w-[52px] shrink-0 text-center font-mono-semibold text-count text-ink"
-        style={{ fontVariant: ['tabular-nums'] }}
-        numberOfLines={1}
-        adjustsFontSizeToFit>
-        {counter.count}
-      </Text>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`${counter.name}を1増やす`}
-        onPress={() => {
-          if (increment(id)) tapHaptic();
-        }}
-        className="h-11 w-14 shrink-0 items-center justify-center rounded-control bg-accent active:opacity-80">
-        <PlusIcon color={c.onAccent} />
-      </Pressable>
-    </Pressable>
+    </GestureDetector>
   );
 });
