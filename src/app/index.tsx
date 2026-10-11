@@ -86,7 +86,6 @@ export default function Home() {
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           onDragEnd={handleDragEnd}
-          activationDistance={10}
           ListFooterComponent={AddCounterButton}
           containerStyle={{ flexGrow: 0 }}
           className="grow-0 rounded-card border border-border bg-surface"

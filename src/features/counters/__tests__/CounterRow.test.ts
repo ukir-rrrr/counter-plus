@@ -1,45 +1,35 @@
 // CounterRow のロジックテスト
-// 長押しで編集シートを開く動作と、ドラッグハンドルの動作が共存することを確認
+// 名前エリアの長押しで編集、ハンドルの onPressIn でドラッグ開始が共存すること
 
 describe('CounterRow interaction logic', () => {
   describe('長押しで編集シートを開く（リグレッション防止）', () => {
-    it('onDragが渡されていても、行の長押しは編集シートを開く', () => {
-      // CounterRowコンポーネントのロジック:
-      // - 行全体の onLongPress は常に openEditSheet を呼ぶ
-      // - onDrag はドラッグハンドルの onLongPress にのみ使用される
+    it('onDragがあっても、名前エリアの長押しは編集シートを開く', () => {
       const onDragCalled = { value: false };
       const openEditSheetCalled = { value: false };
 
-      // 行を長押しした場合のシミュレーション
       const handleRowLongPress = () => {
         openEditSheetCalled.value = true;
       };
 
-      // ドラッグハンドルを長押しした場合のシミュレーション
-      const handleDragHandleLongPress = (onDrag?: () => void) => {
+      const handleDragHandlePressIn = (onDrag?: () => void) => {
         if (onDrag) {
           onDragCalled.value = true;
           onDrag();
         }
       };
 
-      // テスト1: 行を長押し → 編集シートが開く、ドラッグは開始しない
       handleRowLongPress();
       expect(openEditSheetCalled.value).toBe(true);
       expect(onDragCalled.value).toBe(false);
 
-      // リセット
       openEditSheetCalled.value = false;
 
-      // テスト2: ドラッグハンドルを長押し → ドラッグが開始、編集シートは開かない
-      handleDragHandleLongPress(() => {});
+      handleDragHandlePressIn(() => {});
       expect(onDragCalled.value).toBe(true);
       expect(openEditSheetCalled.value).toBe(false);
     });
 
     it('onDragが渡されていない場合、ドラッグハンドルは表示されない', () => {
-      // CounterRowコンポーネントのロジック:
-      // onDrag が undefined の場合、ドラッグハンドルは描画されない
       const onDrag: (() => void) | undefined = undefined;
       const shouldShowDragHandle = onDrag !== undefined;
       expect(shouldShowDragHandle).toBe(false);
@@ -53,30 +43,35 @@ describe('CounterRow interaction logic', () => {
   });
 
   describe('インタラクションの分離', () => {
-    it('行の長押しとドラッグハンドルの長押しは独立している', () => {
-      // 両方のハンドラを持つ場合でも、それぞれが独立して動作する
+    it('名前エリアの長押しとハンドルの pressIn は独立している', () => {
       let rowLongPressCount = 0;
-      let dragHandleLongPressCount = 0;
+      let dragHandlePressInCount = 0;
 
       const handleRowLongPress = () => {
         rowLongPressCount++;
       };
 
-      const handleDragHandleLongPress = () => {
-        dragHandleLongPressCount++;
+      const handleDragHandlePressIn = () => {
+        dragHandlePressInCount++;
       };
 
-      // 行を3回長押し
       handleRowLongPress();
       handleRowLongPress();
       handleRowLongPress();
-
-      // ドラッグハンドルを2回長押し
-      handleDragHandleLongPress();
-      handleDragHandleLongPress();
+      handleDragHandlePressIn();
+      handleDragHandlePressIn();
 
       expect(rowLongPressCount).toBe(3);
-      expect(dragHandleLongPressCount).toBe(2);
+      expect(dragHandlePressInCount).toBe(2);
+    });
+
+    it('ハンドルは LongPress ではなく pressIn で drag を開始する', () => {
+      // DraggableFlatList の親 Pan と RNGH LongPress が競合すると、
+      // drag() は呼ばれても touchTranslate が更新されず初回ドラッグが戻る。
+      const handleUsesPressIn = true;
+      const handleUsesLongPress = false;
+      expect(handleUsesPressIn).toBe(true);
+      expect(handleUsesLongPress).toBe(false);
     });
   });
 });

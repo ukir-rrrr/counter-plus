@@ -1,162 +1,128 @@
-// カウンターストアのロジックテスト
-// 削除後のストア状態を確認するリグレッションテスト
+import type { Counter } from '@/db/schema';
 
-describe('カウンターストアの削除ロジック', () => {
-  describe('remove アクション', () => {
-    it('削除後、ids と byId から項目が削除される', () => {
-      // 初期状態
-      const initialState = {
-        ids: ['id-1', 'id-2', 'id-3'],
-        byId: {
-          'id-1': { id: 'id-1', name: 'Item 1', count: 10 },
-          'id-2': { id: 'id-2', name: 'Item 2', count: 20 },
-          'id-3': { id: 'id-3', name: 'Item 3', count: 30 },
-        } as Record<string, { id: string; name: string; count: number }>,
-      };
+import { deleteCounter, listCounters } from '../repository';
+import { selectTotal, useCountersStore } from '../store';
 
-      // 削除ロジックのシミュレーション（store.ts の remove の実装と同じ）
-      const idToRemove = 'id-2';
-      const { [idToRemove]: _removed, ...remainingById } = initialState.byId;
-      const newState = {
-        ids: initialState.ids.filter((x) => x !== idToRemove),
-        byId: remainingById,
-      };
+jest.mock('../repository', () => ({
+  listCounters: jest.fn(),
+  deleteCounter: jest.fn(),
+  createCounter: jest.fn(),
+  moveCounter: jest.fn(),
+  saveCount: jest.fn(),
+  undoReset: jest.fn(),
+  updateCounter: jest.fn(),
+}));
 
-      // 検証
-      expect(newState.ids).toEqual(['id-1', 'id-3']);
-      expect(newState.ids).not.toContain('id-2');
-      expect(newState.byId['id-1']).toBeDefined();
-      expect(newState.byId['id-2']).toBeUndefined();
-      expect(newState.byId['id-3']).toBeDefined();
-      expect(Object.keys(newState.byId)).toHaveLength(2);
+const listCountersMock = listCounters as jest.MockedFunction<typeof listCounters>;
+const deleteCounterMock = deleteCounter as jest.MockedFunction<typeof deleteCounter>;
+
+function makeCounter(id: string, name: string, count = 0): Counter {
+  return {
+    id,
+    categoryId: 'cat-1',
+    name,
+    count,
+    memo: '',
+    color: 'gray',
+    sortOrder: 0,
+    createdAt: 0,
+    updatedAt: 0,
+  };
+}
+
+function seed(rows: Counter[]) {
+  useCountersStore.setState({
+    categoryId: 'cat-1',
+    ids: rows.map((r) => r.id),
+    byId: Object.fromEntries(rows.map((r) => [r.id, r])),
+    pendingUndo: null,
+  });
+}
+
+describe('useCountersStore.remove', () => {
+  let dbRows: Counter[];
+
+  beforeEach(() => {
+    dbRows = [
+      makeCounter('alpha', 'Alpha', 1),
+      makeCounter('bravo', 'Bravo', 2),
+      makeCounter('charlie', 'Charlie', 3),
+    ];
+    seed(dbRows);
+
+    deleteCounterMock.mockImplementation((id: string) => {
+      dbRows = dbRows.filter((r) => r.id !== id);
     });
-
-    it('最後の項目を削除しても空のリストになる', () => {
-      const initialState = {
-        ids: ['only-id'],
-        byId: {
-          'only-id': { id: 'only-id', name: 'Only Item', count: 5 },
-        } as Record<string, { id: string; name: string; count: number }>,
-      };
-
-      const idToRemove = 'only-id';
-      const { [idToRemove]: _removed, ...remainingById } = initialState.byId;
-      const newState = {
-        ids: initialState.ids.filter((x) => x !== idToRemove),
-        byId: remainingById,
-      };
-
-      expect(newState.ids).toEqual([]);
-      expect(Object.keys(newState.byId)).toHaveLength(0);
-    });
-
-    it('存在しないIDを削除しても状態は変わらない', () => {
-      const initialState = {
-        ids: ['id-1', 'id-2'],
-        byId: {
-          'id-1': { id: 'id-1', name: 'Item 1', count: 10 },
-          'id-2': { id: 'id-2', name: 'Item 2', count: 20 },
-        } as Record<string, { id: string; name: string; count: number }>,
-      };
-
-      const idToRemove = 'non-existent-id';
-      const { [idToRemove]: _removed, ...remainingById } = initialState.byId;
-      const newState = {
-        ids: initialState.ids.filter((x) => x !== idToRemove),
-        byId: remainingById,
-      };
-
-      // idsは変わらない（フィルタで何も除外されない）
-      expect(newState.ids).toEqual(['id-1', 'id-2']);
-      // byIdも変わらない（存在しないキーを削除しようとしても何も起きない）
-      expect(Object.keys(newState.byId)).toHaveLength(2);
-    });
+    listCountersMock.mockImplementation(async () => [...dbRows]);
   });
 
-  describe('連打（連続削除）', () => {
-    it('連続して複数の項目を削除できる', () => {
-      let state = {
-        ids: ['id-1', 'id-2', 'id-3', 'id-4', 'id-5'],
-        byId: {
-          'id-1': { id: 'id-1', name: 'Item 1' },
-          'id-2': { id: 'id-2', name: 'Item 2' },
-          'id-3': { id: 'id-3', name: 'Item 3' },
-          'id-4': { id: 'id-4', name: 'Item 4' },
-          'id-5': { id: 'id-5', name: 'Item 5' },
-        } as Record<string, { id: string; name: string }>,
-      };
+  it('削除直後に ids / byId / 項目数がストアから消える', () => {
+    useCountersStore.getState().remove('alpha');
 
-      // 削除関数
-      const remove = (id: string) => {
-        const { [id]: _removed, ...remainingById } = state.byId;
-        state = {
-          ids: state.ids.filter((x) => x !== id),
-          byId: remainingById,
-        };
-      };
-
-      // 連続削除
-      remove('id-2');
-      remove('id-4');
-      remove('id-1');
-
-      expect(state.ids).toEqual(['id-3', 'id-5']);
-      expect(Object.keys(state.byId)).toHaveLength(2);
-      expect(state.byId['id-3']).toBeDefined();
-      expect(state.byId['id-5']).toBeDefined();
-    });
-
-    it('同じIDを2回削除しようとしても問題ない', () => {
-      let state = {
-        ids: ['id-1', 'id-2'],
-        byId: {
-          'id-1': { id: 'id-1', name: 'Item 1' },
-          'id-2': { id: 'id-2', name: 'Item 2' },
-        } as Record<string, { id: string; name: string }>,
-      };
-
-      const remove = (id: string) => {
-        const { [id]: _removed, ...remainingById } = state.byId;
-        state = {
-          ids: state.ids.filter((x) => x !== id),
-          byId: remainingById,
-        };
-      };
-
-      // 同じIDを2回削除
-      remove('id-1');
-      remove('id-1');
-
-      expect(state.ids).toEqual(['id-2']);
-      expect(Object.keys(state.byId)).toHaveLength(1);
-    });
+    const state = useCountersStore.getState();
+    expect(state.ids).toEqual(['bravo', 'charlie']);
+    expect(state.byId.alpha).toBeUndefined();
+    expect(state.ids.length).toBe(2);
+    expect(selectTotal(state)).toBe(5);
   });
 
-  describe('削除と UI 状態の同期', () => {
-    it('削除後、idsの長さが正しく減る', () => {
-      const initialIds = ['a', 'b', 'c', 'd', 'e'];
-      const idsAfterDelete = initialIds.filter((x) => x !== 'c');
-      
-      expect(initialIds.length).toBe(5);
-      expect(idsAfterDelete.length).toBe(4);
-      expect(idsAfterDelete).not.toContain('c');
+  it('ホームがフォーカスで load しても、書き込み待ちのあと削除済みのまま', async () => {
+    useCountersStore.getState().remove('alpha');
+    expect(useCountersStore.getState().ids).toEqual(['bravo', 'charlie']);
+
+    // 編集シートを閉じたあとの useFocusEffect 相当
+    await useCountersStore.getState().load('cat-1');
+
+    const state = useCountersStore.getState();
+    expect(deleteCounterMock).toHaveBeenCalledWith('alpha');
+    expect(listCountersMock).toHaveBeenCalled();
+    expect(state.ids).toEqual(['bravo', 'charlie']);
+    expect(state.byId.alpha).toBeUndefined();
+    expect(state.ids.length).toBe(2);
+  });
+
+  it('load は deleteCounter が終わるまで DB を読まない', async () => {
+    const order: string[] = [];
+    deleteCounterMock.mockImplementation((id: string) => {
+      order.push('delete');
+      dbRows = dbRows.filter((r) => r.id !== id);
+    });
+    listCountersMock.mockImplementation(async () => {
+      order.push('list');
+      return [...dbRows];
     });
 
-    it('削除後の total は削除された項目を含まない', () => {
-      const byId = {
-        'id-1': { count: 10 },
-        'id-2': { count: 20 },
-        'id-3': { count: 30 },
-      } as Record<string, { count: number }>;
+    useCountersStore.getState().remove('alpha');
+    await useCountersStore.getState().load('cat-1');
 
-      // 削除前の合計
-      const totalBefore = Object.values(byId).reduce((sum, item) => sum + item.count, 0);
-      expect(totalBefore).toBe(60);
+    expect(order).toEqual(['delete', 'list']);
+  });
 
-      // id-2 を削除
-      const { 'id-2': _removed, ...remainingById } = byId;
-      const totalAfter = Object.values(remainingById).reduce((sum, item) => sum + item.count, 0);
-      expect(totalAfter).toBe(40);
-    });
+  it('連続削除（連打）しても両方消える', async () => {
+    useCountersStore.getState().remove('alpha');
+    useCountersStore.getState().remove('bravo');
+
+    expect(useCountersStore.getState().ids).toEqual(['charlie']);
+
+    await useCountersStore.getState().load('cat-1');
+
+    expect(useCountersStore.getState().ids).toEqual(['charlie']);
+    expect(deleteCounterMock).toHaveBeenCalledWith('alpha');
+    expect(deleteCounterMock).toHaveBeenCalledWith('bravo');
+  });
+
+  it('同じIDを連打しても1件だけ消える', async () => {
+    useCountersStore.getState().remove('alpha');
+    useCountersStore.getState().remove('alpha');
+
+    await useCountersStore.getState().load('cat-1');
+
+    expect(useCountersStore.getState().ids).toEqual(['bravo', 'charlie']);
+  });
+
+  it('存在しないIDを削除してもリストは変わらない', async () => {
+    useCountersStore.getState().remove('missing');
+    await useCountersStore.getState().load('cat-1');
+    expect(useCountersStore.getState().ids).toEqual(['alpha', 'bravo', 'charlie']);
   });
 });
