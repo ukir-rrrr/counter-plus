@@ -8,7 +8,7 @@ jest.mock('expo-crypto', () => ({
 
 // expo-haptics をモック
 jest.mock('expo-haptics', () => ({
-  impactAsync: jest.fn(),
+  impactAsync: jest.fn(() => Promise.resolve()),
   ImpactFeedbackStyle: {
     Light: 'light',
     Medium: 'medium',
@@ -43,6 +43,20 @@ jest.mock('expo-file-system', () => ({
 jest.mock('expo-sharing', () => ({
   isAvailableAsync: jest.fn(async () => true),
   shareAsync: jest.fn(async () => {}),
+}));
+
+jest.mock('expo-linking', () => ({
+  openURL: jest.fn(async () => true),
+  canOpenURL: jest.fn(async () => true),
+}));
+
+jest.mock('expo-web-browser', () => ({
+  openBrowserAsync: jest.fn(async () => ({ type: 'dismiss' })),
+}));
+
+jest.mock('expo-constants', () => ({
+  __esModule: true,
+  default: { expoConfig: { version: '1.0.0' } },
 }));
 
 // drizzle-orm/expo-sqlite をモック
