@@ -1,4 +1,5 @@
 import {
+  CSV_UPDATED_AT_HEADER,
   UTF8_BOM_BYTES,
   buildCsv,
   buildCsvFileName,
@@ -96,8 +97,10 @@ describe('sanitizeFileNamePart / buildCsvFileName', () => {
 describe('buildCsv', () => {
   it('列の組み合わせどおりヘッダと行を出す', () => {
     const csv = buildCsv([row()], allOn);
-    expect(csv.startsWith('カテゴリ,項目名,数,メモ,最終更新\r\n')).toBe(true);
+    expect(csv.startsWith(`カテゴリ,項目名,数,メモ,${CSV_UPDATED_AT_HEADER}\r\n`)).toBe(true);
     expect(csv).toContain('棚 A,マグカップ 白,24,棚上段,2026-10-09 18:42\r\n');
+    expect(CSV_UPDATED_AT_HEADER).toBe('最終更新日時');
+    expect(csvHeaders(allOn)).toContain(CSV_UPDATED_AT_HEADER);
   });
 
   it('任意列を外せる。項目名と数は残る', () => {

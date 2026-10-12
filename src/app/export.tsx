@@ -10,6 +10,7 @@ import { waitForCounterWrites } from '@/features/counters/store';
 import {
   buildCsv,
   buildCsvFileName,
+  CSV_UPDATED_AT_HEADER,
   previewLines,
   type CsvColumnOptions,
   type CsvExportRow,
@@ -149,7 +150,7 @@ export default function ExportScreen() {
             />
             <ColumnToggle
               testID="export-column-updated-at"
-              label="最終更新日時"
+              label={CSV_UPDATED_AT_HEADER}
               checked={includeUpdatedAt}
               onToggle={() => setIncludeUpdatedAt((v) => !v)}
               last

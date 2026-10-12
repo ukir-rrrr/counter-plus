@@ -1,6 +1,6 @@
 import { router, Stack } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Pressable, Text, TextInput, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Alert, Pressable, Text, View } from 'react-native';
 import DraggableFlatList, {
   RenderItemParams,
   ScaleDecorator,
@@ -9,6 +9,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CheckCircleIcon, CloseIcon, FolderIcon, PlusIcon } from '@/components/icons';
 import { useThemeColors } from '@/constants/use-theme-colors';
+import { CategoryNameDialog } from '@/features/categories/components/CategoryNameDialog';
+import { defaultCategoryName, resolveCategoryName } from '@/features/categories/name';
 import {
   selectGrandTotal,
   selectTotalCategories,
@@ -150,77 +152,11 @@ function AddCategoryButton({ onAdd }: { onAdd: () => void }) {
   );
 }
 
-function RenameDialogInner({
-  initialName,
-  onSubmit,
-  onCancel,
-}: {
-  initialName: string;
-  onSubmit: (name: string) => void;
-  onCancel: () => void;
-}) {
-  const [name, setName] = useState(initialName);
-  const inputRef = useRef<TextInput>(null);
-
-  useEffect(() => {
-    const timer = setTimeout(() => inputRef.current?.focus(), 100);
-    return () => clearTimeout(timer);
-  }, []);
-
-  return (
-    <View className="absolute inset-0 items-center justify-center bg-black/50">
-      <View className="mx-8 w-full max-w-sm rounded-card bg-surface p-5">
-        <Text className="mb-4 text-center font-sans-bold text-title text-ink">
-          カテゴリ名を変更
-        </Text>
-        <TextInput
-          ref={inputRef}
-          value={name}
-          onChangeText={setName}
-          className="mb-4 h-11 rounded-control border border-border bg-background px-3 font-sans text-body text-ink"
-          returnKeyType="done"
-          onSubmitEditing={() => {
-            if (name.trim()) onSubmit(name.trim());
-          }}
-        />
-        <View className="flex-row gap-3">
-          <Pressable
-            onPress={onCancel}
-            className="flex-1 items-center justify-center rounded-control bg-neutral-button py-3 active:opacity-70">
-            <Text className="font-sans-medium text-body text-ink">キャンセル</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => {
-              if (name.trim()) onSubmit(name.trim());
-            }}
-            className="flex-1 items-center justify-center rounded-control bg-accent py-3 active:opacity-70">
-            <Text className="font-sans-medium text-body text-on-accent">変更</Text>
-          </Pressable>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-function RenameDialog({
-  visible,
-  initialName,
-  onSubmit,
-  onCancel,
-}: {
-  visible: boolean;
-  initialName: string;
-  onSubmit: (name: string) => void;
-  onCancel: () => void;
-}) {
-  if (!visible) return null;
-  return <RenameDialogInner initialName={initialName} onSubmit={onSubmit} onCancel={onCancel} />;
-}
-
 export default function CategoriesScreen() {
   const insets = useSafeAreaInsets();
   const [isEditing, setIsEditing] = useState(false);
   const [renameTarget, setRenameTarget] = useState<CategoryWithStats | null>(null);
+  const [adding, setAdding] = useState(false);
 
   const categories = useCategoriesStore((s) => s.categories);
   const selectedId = useCategoriesStore((s) => s.selectedId);
@@ -247,27 +183,17 @@ export default function CategoriesScreen() {
     [select, countersLoad]
   );
 
+  const addFallbackName = defaultCategoryName(categories.length);
+
   const handleAdd = () => {
-    const defaultName = `カテゴリ ${categories.length + 1}`;
-    Alert.prompt(
-      'カテゴリを追加',
-      '新しいカテゴリの名前を入力してください',
-      [
-        { text: 'キャンセル', style: 'cancel' },
-        {
-          text: '追加',
-          onPress: (inputText?: string) => {
-            const name = inputText?.trim() || defaultName;
-            const newCat = add(name);
-            if (newCat) {
-              tapHaptic();
-            }
-          },
-        },
-      ],
-      'plain-text',
-      defaultName
-    );
+    setAdding(true);
+  };
+
+  const handleAddSubmit = (input: string) => {
+    const name = resolveCategoryName(input, addFallbackName);
+    const newCat = add(name);
+    if (newCat) tapHaptic();
+    setAdding(false);
   };
 
   const handleRename = useCallback((category: CategoryWithStats) => {
@@ -352,9 +278,21 @@ export default function CategoriesScreen() {
 
       <View style={{ height: insets.bottom }} />
 
-      <RenameDialog
+      <CategoryNameDialog
+        visible={adding}
+        title="カテゴリを追加"
+        initialName=""
+        placeholder={addFallbackName}
+        submitLabel="追加"
+        allowEmpty
+        onSubmit={handleAddSubmit}
+        onCancel={() => setAdding(false)}
+      />
+      <CategoryNameDialog
         visible={renameTarget !== null}
+        title="カテゴリ名を変更"
         initialName={renameTarget?.name ?? ''}
+        submitLabel="変更"
         onSubmit={handleRenameSubmit}
         onCancel={() => setRenameTarget(null)}
       />

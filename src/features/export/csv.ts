@@ -17,6 +17,9 @@ export const UTF8_BOM = '\uFEFF';
 export const UTF8_BOM_BYTES = new Uint8Array([0xef, 0xbb, 0xbf]);
 export const PREVIEW_DATA_ROWS = 5;
 
+/** チェック欄とCSV見出しで同じ文言（screens.md「最終更新日時」） */
+export const CSV_UPDATED_AT_HEADER = '最終更新日時';
+
 function pad2(n: number): string {
   return n.toString().padStart(2, '0');
 }
@@ -58,7 +61,7 @@ export function csvHeaders(options: CsvColumnOptions): string[] {
   if (options.includeCategory) headers.push('カテゴリ');
   headers.push('項目名', '数');
   if (options.includeMemo) headers.push('メモ');
-  if (options.includeUpdatedAt) headers.push('最終更新');
+  if (options.includeUpdatedAt) headers.push(CSV_UPDATED_AT_HEADER);
   return headers;
 }
 
