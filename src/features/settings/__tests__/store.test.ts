@@ -1,6 +1,7 @@
 import { getBooleanSetting, setBooleanSetting } from '../repository';
 import {
   resetSettingsWriteQueueForTests,
+  SETTINGS_SAVE_FAILED_MESSAGE,
   useSettingsStore,
   waitForSettingsWrites,
 } from '../store';
@@ -96,7 +97,7 @@ describe('useSettingsStore', () => {
     expect(useSettingsStore.getState().error).toBe('設定を読み込めませんでした');
   });
 
-  it('保存失敗は DB から読み直す', async () => {
+  it('保存失敗は DB から読み直し、error を入れる', async () => {
     setMock.mockImplementation(() => {
       throw new Error('disk full');
     });
@@ -110,6 +111,48 @@ describe('useSettingsStore', () => {
 
     await waitForSettingsWrites();
     expect(useSettingsStore.getState().haptics).toBe(true);
+    expect(useSettingsStore.getState().error).toBe(SETTINGS_SAVE_FAILED_MESSAGE);
+  });
+
+  it('保存に成功すると前回の error を消す', async () => {
+    useSettingsStore.setState({ error: SETTINGS_SAVE_FAILED_MESSAGE });
+    useSettingsStore.getState().setSound(true);
+    expect(useSettingsStore.getState().error).toBeNull();
+    await waitForSettingsWrites();
+    expect(setMock).toHaveBeenCalledWith('sound', true);
+    expect(useSettingsStore.getState().error).toBeNull();
+  });
+
+  it('保存失敗のあと読み直しも失敗したら error だけ残す', async () => {
+    setMock.mockImplementation(() => {
+      throw new Error('disk');
+    });
+    getMock.mockImplementation(() => {
+      throw new Error('db locked');
+    });
+
+    useSettingsStore.getState().setHaptics(false);
+    expect(useSettingsStore.getState().haptics).toBe(false);
+    await waitForSettingsWrites();
+    expect(useSettingsStore.getState().haptics).toBe(false);
+    expect(useSettingsStore.getState().error).toBe(SETTINGS_SAVE_FAILED_MESSAGE);
+  });
+
+  it('連打の最後が失敗したら error になり、最後の成功値が残るわけではない', async () => {
+    setMock.mockImplementation((_key, value) => {
+      if (value === false) throw new Error('disk full');
+    });
+    getMock.mockImplementation((key, fallback) => {
+      if (key === 'sound') return false;
+      return fallback;
+    });
+
+    useSettingsStore.getState().setSound(true);
+    useSettingsStore.getState().setSound(false);
+
+    await waitForSettingsWrites();
+    expect(useSettingsStore.getState().sound).toBe(false);
+    expect(useSettingsStore.getState().error).toBe(SETTINGS_SAVE_FAILED_MESSAGE);
   });
 
   it('連打しても最後の値が残り、書き込みは順番に行われる', async () => {

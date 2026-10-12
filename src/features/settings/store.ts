@@ -2,6 +2,8 @@ import { create } from 'zustand';
 
 import { getBooleanSetting, setBooleanSetting, settingKeys } from './repository';
 
+export const SETTINGS_SAVE_FAILED_MESSAGE = '設定を保存できませんでした';
+
 type SettingsState = {
   haptics: boolean;
   sound: boolean;
@@ -44,13 +46,25 @@ export function resetSettingsWriteQueueForTests(): void {
   writeQueue = Promise.resolve();
 }
 
+function readAllSettings(): Pick<SettingsState, 'haptics' | 'sound' | 'keepAwake'> {
+  return {
+    haptics: getBooleanSetting(settingKeys.haptics, true),
+    sound: getBooleanSetting(settingKeys.sound, false),
+    keepAwake: getBooleanSetting(settingKeys.keepAwake, true),
+  };
+}
+
 export const useSettingsStore = create<SettingsState>((set, get) => {
   function persist(key: string, value: boolean, apply: () => void): void {
     apply();
     enqueueWrite(
       () => setBooleanSetting(key, value),
       () => {
-        get().load();
+        try {
+          set({ ...readAllSettings(), error: SETTINGS_SAVE_FAILED_MESSAGE });
+        } catch {
+          set({ error: SETTINGS_SAVE_FAILED_MESSAGE });
+        }
       },
     );
   }
@@ -63,12 +77,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
     load: async () => {
       try {
         await waitForWrites();
-        set({
-          haptics: getBooleanSetting(settingKeys.haptics, true),
-          sound: getBooleanSetting(settingKeys.sound, false),
-          keepAwake: getBooleanSetting(settingKeys.keepAwake, true),
-          error: null,
-        });
+        set({ ...readAllSettings(), error: null });
       } catch (e: unknown) {
         console.warn('設定を読み込めませんでした', e);
         set({
@@ -77,13 +86,13 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
       }
     },
     setHaptics: (value) => {
-      persist(settingKeys.haptics, value, () => set({ haptics: value }));
+      persist(settingKeys.haptics, value, () => set({ haptics: value, error: null }));
     },
     setSound: (value) => {
-      persist(settingKeys.sound, value, () => set({ sound: value }));
+      persist(settingKeys.sound, value, () => set({ sound: value, error: null }));
     },
     setKeepAwake: (value) => {
-      persist(settingKeys.keepAwake, value, () => set({ keepAwake: value }));
+      persist(settingKeys.keepAwake, value, () => set({ keepAwake: value, error: null }));
     },
   };
 });

@@ -55,6 +55,7 @@ describe('SettingsScreen', () => {
     expect(getByTestId('settings-privacy')).toBeTruthy();
     expect(getByTestId('settings-version').props.children).toBe('カウンター＋ バージョン 1.0.0');
     expect(queryByText(/Proにする/)).toBeNull();
+    expect(queryByText('設定を保存できませんでした')).toBeNull();
 
     await act(async () => {
       fireEvent.press(getByTestId('settings-toggle-haptics'));
@@ -86,6 +87,13 @@ describe('SettingsScreen', () => {
       expect(Alert.alert).toHaveBeenCalledWith('準備中', 'この機能は準備中です。');
     });
 
+    await unmount();
+  });
+
+  it('保存失敗の error を日本語で出す', async () => {
+    useSettingsStore.setState({ error: '設定を保存できませんでした' });
+    const { getByTestId, unmount } = await render(<SettingsScreen />);
+    expect(getByTestId('settings-error').props.children).toBe('設定を保存できませんでした');
     await unmount();
   });
 });

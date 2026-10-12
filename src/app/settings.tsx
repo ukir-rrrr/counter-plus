@@ -24,6 +24,7 @@ export default function SettingsScreen() {
   const setHaptics = useSettingsStore((s) => s.setHaptics);
   const setSound = useSettingsStore((s) => s.setSound);
   const setKeepAwake = useSettingsStore((s) => s.setKeepAwake);
+  const error = useSettingsStore((s) => s.error);
   const version = getAppVersion();
 
   return (
@@ -35,6 +36,13 @@ export default function SettingsScreen() {
         className="flex-1"
         contentContainerClassName="pb-4 pt-1"
         keyboardShouldPersistTaps="handled">
+        {error ? (
+          <Text
+            testID="settings-error"
+            className="mx-screen mb-2 text-center font-sans text-label text-danger">
+            {error}
+          </Text>
+        ) : null}
         {/* Pro案内と実リンクはステップ7・9。ここでは出さない */}
         <SettingsSection title="カウント">
           <SettingsToggle
