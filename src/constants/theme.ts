@@ -18,6 +18,8 @@ const light = {
   dangerBg: '#FFF6F5',
   dangerBorder: '#F1C9C4',
   adBg: '#E4E7E2',
+  badgeEdit: '#FBF0E1',
+  badgeEditInk: '#7A4410',
 };
 
 const dark: typeof light = {
@@ -37,6 +39,8 @@ const dark: typeof light = {
   dangerBg: '#2A1716',
   dangerBorder: '#5A2A26',
   adBg: '#1F2421',
+  badgeEdit: '#3A2A18',
+  badgeEditInk: '#E8B86D',
 };
 
 export const colors = { light, dark };

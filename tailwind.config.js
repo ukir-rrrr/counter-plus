@@ -16,6 +16,8 @@ const tokenColors = [
   'danger-bg',
   'danger-border',
   'ad-bg',
+  'badge-edit',
+  'badge-edit-ink',
 ];
 
 /** @type {import('tailwindcss').Config} */

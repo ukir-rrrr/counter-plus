@@ -31,6 +31,20 @@ jest.mock('expo-sqlite', () => ({
   })),
 }));
 
+jest.mock('expo-file-system', () => ({
+  File: class File {
+    uri = 'file:///mock/cache/file.csv';
+    create() {}
+    write() {}
+  },
+  Paths: { cache: 'file:///mock/cache' },
+}));
+
+jest.mock('expo-sharing', () => ({
+  isAvailableAsync: jest.fn(async () => true),
+  shareAsync: jest.fn(async () => {}),
+}));
+
 // drizzle-orm/expo-sqlite をモック
 jest.mock('drizzle-orm/expo-sqlite', () => ({
   drizzle: jest.fn(() => ({
