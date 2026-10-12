@@ -20,6 +20,8 @@
   --color-danger-bg: #fff6f5;
   --color-danger-border: #f1c9c4;
   --color-ad-bg: #e4e7e2;
+  --color-badge-edit: #fbf0e1;
+  --color-badge-edit-ink: #7a4410;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -40,5 +42,7 @@
     --color-danger-bg: #2a1716;
     --color-danger-border: #5a2a26;
     --color-ad-bg: #1f2421;
+    --color-badge-edit: #3a2a18;
+    --color-badge-edit-ink: #e8b86d;
   }
 }

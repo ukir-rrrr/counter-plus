@@ -35,6 +35,14 @@ export function MenuIcon({ color, size = 22 }: IconProps) {
   );
 }
 
+export function ChevronLeftIcon({ color, size = 22 }: IconProps) {
+  return (
+    <Icon color={color} size={size} strokeWidth={2.2}>
+      <Path d="M15 6l-6 6 6 6" />
+    </Icon>
+  );
+}
+
 export function ChevronDownIcon({ color, size = 16 }: IconProps) {
   return (
     <Icon color={color} size={size} strokeWidth={2}>
@@ -90,6 +98,16 @@ export function ClockIcon({ color, size = 16 }: IconProps) {
     <Icon color={color} size={size} strokeWidth={1.9}>
       <Circle cx="12" cy="12" r="8.5" />
       <Path d="M12 7.5V12l3 2" />
+    </Icon>
+  );
+}
+
+export function ShareUpIcon({ color, size = 20 }: IconProps) {
+  return (
+    <Icon color={color} size={size} strokeWidth={2}>
+      <Path d="M12 15V4" />
+      <Path d="M7.5 8.5L12 4l4.5 4.5" />
+      <Path d="M5 13v6h14v-6" />
     </Icon>
   );
 }

@@ -63,6 +63,10 @@ function enqueueWrite(write: () => void, onError: () => void): void {
 }
 
 /** 未完了の書き込みが終わるまで待つ（フォーカス時の再読込が古いDBを見ないようにする） */
+export async function waitForCounterWrites(): Promise<void> {
+  await waitForWrites();
+}
+
 async function waitForWrites(): Promise<void> {
   let current: Promise<void>;
   do {

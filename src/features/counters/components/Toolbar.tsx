@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { Alert, Pressable, Text, View } from 'react-native';
 
 import { ClockIcon, DownloadIcon, SortIcon } from '@/components/icons';
@@ -54,16 +55,20 @@ export function Toolbar() {
   return (
     <View className="flex-row gap-2 px-screen pb-3 pt-2.5">
       <Pressable
+        testID="toolbar-history"
         accessibilityRole="button"
         accessibilityLabel="履歴（Pro）"
+        onPress={() => router.push('/history')}
         className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-control border border-border bg-surface active:opacity-70">
         <ClockIcon color={c.ink} />
         <Text className="font-sans-medium text-label text-ink">履歴</Text>
         <ProBadge />
       </Pressable>
       <Pressable
+        testID="toolbar-export"
         accessibilityRole="button"
         accessibilityLabel="CSV出力（Pro）"
+        onPress={() => router.push('/export')}
         className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-control border border-border bg-surface active:opacity-70">
         <DownloadIcon color={c.ink} />
         <Text className="font-sans-medium text-label text-ink">CSV出力</Text>
