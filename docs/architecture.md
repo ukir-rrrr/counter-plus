@@ -95,7 +95,7 @@ Expo SDK 57を土台にし、定番で情報の多いライブラリだけを使
 counter-plus/
   src/
     app/                    # 画面（Expo Router）。ルートだけを置く
-      _layout.tsx           # 初期化：DB移行、RevenueCat、広告、ATT
+      _layout.tsx           # 初期化：DB移行、RevenueCat、計測。ATTと広告はホーム表示後
       index.tsx             # ホーム（リスト）
       categories.tsx        # カテゴリ一覧
       counter/[id].tsx      # 項目の編集（シート）
@@ -114,7 +114,7 @@ counter-plus/
       export/               # CSV生成と共有
       settings/
     lib/
-      purchases.ts          # RevenueCat、useIsPro()
+      purchases.ts          # RevenueCat、useIsPro() / getIsPro()
       ads.tsx               # バナー（Proなら表示しない）
       analytics.ts          # PostHogのイベント送信
       haptics.ts
@@ -129,7 +129,7 @@ counter-plus/
 
 ## 課金・広告・計測
 
-Proかどうかは `useIsPro()` の1か所で判定し、広告の表示と機能の解放はすべてこれを見る。
+Proかどうかは `useIsPro()` / `getIsPro()`（`src/lib/purchases.ts`）で判定し、広告の表示と機能の解放はすべてこれを見る。
 
 **課金（RevenueCat）**
 
@@ -142,7 +142,7 @@ Proかどうかは `useIsPro()` の1か所で判定し、広告の表示と機�
 
 - ホーム画面最下部にアダプティブバナーを1つだけ置く。他の画面には出さない。
 - ボタンとの間に余白をとり、誤タップを防ぐ。
-- 初回起動時にATTの確認を出す。拒否されたら非パーソナライズ広告にする。
+- ホーム画面が見えてからATTの確認を出す（スプラッシュ中には出さない）。拒否されたら非パーソナライズ広告にする。
 - 開発中はテスト広告IDを使う（本番IDで自分でタップするとアカウント停止の恐れがある）。
 
 **計測（PostHog）**
@@ -154,7 +154,7 @@ Proかどうかは `useIsPro()` の1か所で判定し、広告の表示と機�
 | app_open | 継続して使われているか |
 | counter_created / category_created | どれくらいの規模で使うか |
 | count_tapped | カウントされているか（回数だけ。毎回は送らずまとめて送る） |
-| pro_gate_shown | どのPro機能で購入画面が出たか |
+| pro_gate_shown | どのPro機能で購入画面が出たか（`from` は csv / history / category / sort / ads。設定からの自主オープンは送らない） |
 | purchase_completed | どこから買われたか |
 | csv_exported | 棚卸し用途で使われているか |
 

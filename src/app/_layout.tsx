@@ -20,6 +20,7 @@ import migrations from '@/db/migrations/migrations';
 import { ensureDefaultCategory } from '@/features/categories/repository';
 import { useSettingsStore } from '@/features/settings/store';
 import { useHideDevToolsFabOnModals } from '@/lib/devToolsFab';
+import { initAnalytics } from '@/lib/analytics';
 import { hydrateCachedEntitlement, initPurchases } from '@/lib/purchases';
 
 SplashScreen.preventAutoHideAsync();
@@ -65,6 +66,7 @@ export default function RootLayout() {
         hydrateCachedEntitlement();
         setSeeded(true);
         void initPurchases();
+        void initAnalytics();
       })
       .catch((e: unknown) => setSeedError(e instanceof Error ? e : new Error(String(e))));
   }, [migration.success]);

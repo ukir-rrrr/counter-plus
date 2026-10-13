@@ -1,13 +1,12 @@
 import { useKeepAwake } from 'expo-keep-awake';
 import { Stack, useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Text, View } from 'react-native';
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { saveCounterSortOrder } from '@/features/categories/repository';
 import { useCategoriesStore } from '@/features/categories/store';
-import { AdPlaceholder } from '@/features/counters/components/AdPlaceholder';
 import { AddCounterButton } from '@/features/counters/components/AddCounterButton';
 import { CounterRow } from '@/features/counters/components/CounterRow';
 import { HomeHeader } from '@/features/counters/components/HomeHeader';
@@ -16,6 +15,7 @@ import { TotalCard } from '@/features/counters/components/TotalCard';
 import { UndoToast } from '@/features/counters/components/UndoToast';
 import { useCountersStore } from '@/features/counters/store';
 import { useSettingsStore } from '@/features/settings/store';
+import { HomeBannerAd, prepareHomeAds } from '@/lib/ads';
 import { tapHaptic } from '@/lib/haptics';
 
 function KeepAwake() {
@@ -45,6 +45,11 @@ export default function Home() {
 
   const selectedCategory = categories.find((c) => c.id === selectedId);
   const categoryName = selectedCategory?.name ?? '';
+
+  // ホームが見えてから ATT → 広告初期化（スプラッシュ中には出さない）
+  useEffect(() => {
+    void prepareHomeAds();
+  }, []);
 
   // 画面にフォーカスが戻ったときにカテゴリと項目を読み込む
   useFocusEffect(
@@ -96,7 +101,7 @@ export default function Home() {
       </View>
       <Text className="px-screen pt-2 text-center font-sans text-hint text-ink-subtle">行を長押しで編集、左のハンドルで並べ替え</Text>
       <Toolbar />
-      <AdPlaceholder />
+      <HomeBannerAd />
       <View style={{ height: insets.bottom }} />
     </View>
   );

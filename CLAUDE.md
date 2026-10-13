@@ -18,6 +18,7 @@
 | `docs/design/mockups/` | 各画面のHTMLモックアップ。画面を作るときは対応するファイルを見て、見た目を合わせる（`_archive/` は使わない） |
 | `docs/implementation-plan.md` | 実装の順番とチェックリスト |
 | `docs/revenuecat-setup.md` | RevenueCat / App Store Connect のオーナー作業 |
+| `docs/ads-analytics-setup.md` | AdMob / ATT / PostHog / App Store プライバシー申告のオーナー作業 |
 
 `docs/private/`（Git管理外・公開リポジトリには無い）に事業資料がある場合は参照してよい。
 ただし、その内容（価格の根拠、収益目標、競合の名前や分析）をコード・コメント・コミットメッセージ・公開ドキュメントに書かない。
@@ -42,7 +43,7 @@ RevenueCat（react-native-purchases）/ AdMob（react-native-google-mobile-ads�
 - 画面から直接SQLを書かない。DBアクセスは `src/features/*/repository.ts` 経由
 - カウント操作の順番：Zustandの値を更新して即座に描画 → SQLiteに保存し、同じトランザクションで `count_events` に1行追加
 - 保存ボタンは作らない（すべて自動保存）
-- Proかどうかの判定は `useIsPro()`（`src/lib/purchases.ts`）だけで行う
+- Proかどうかの判定は `useIsPro()` / `getIsPro()`（`src/lib/purchases.ts`）だけで行う。フックが使えない場所は `getIsPro()`
 - 広告はホーム画面最下部のバナー1つだけ。Proなら表示しない。開発中は必ずAdMobのテスト広告IDを使う
 - 計測イベントに、項目名やメモなどユーザーが入力した内容を含めない
 - 色・文字サイズ・角丸は `docs/design/screens.md` のトークンを使い、直書きしない

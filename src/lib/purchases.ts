@@ -169,26 +169,22 @@ function hasNativeModule(): boolean {
   }
 }
 
-export function getApiKey(
-  env: Record<string, string | undefined> = process.env,
-  os: string = Platform.OS,
-): string | null {
-  const raw = os === 'ios' ? env.EXPO_PUBLIC_REVENUECAT_IOS_KEY : env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY;
+export function getApiKey(os: string = Platform.OS): string | null {
+  // Metro が本番バンドルで値を埋め込むので、process.env.EXPO_PUBLIC_* を直接書く
+  const raw =
+    os === 'ios' ? process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY : process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY;
   const key = raw?.trim() ?? '';
   return key.length > 0 ? key : null;
 }
 
-export function inspectPurchasesAvailability(
-  env: Record<string, string | undefined> = process.env,
-  os: string = Platform.OS,
-): PurchasesAvailability {
+export function inspectPurchasesAvailability(os: string = Platform.OS): PurchasesAvailability {
   if (availabilityOverride) return availabilityOverride;
   if (injectedClient) return { available: true };
   if (isExpoGoEnv()) return { available: false, reason: 'expo_go' };
   if (!isNativeStorePlatform(os) || !hasNativeModule()) {
     return { available: false, reason: 'no_native' };
   }
-  if (!getApiKey(env, os)) return { available: false, reason: 'no_key' };
+  if (!getApiKey(os)) return { available: false, reason: 'no_key' };
   return { available: true };
 }
 
@@ -454,7 +450,7 @@ export async function purchasePro(): Promise<PurchaseResult> {
     const result = await client.purchasePackage(selectedPackage);
     persistIsPro(isProFromCustomerInfo(result.customerInfo));
     usePurchasesStore.setState({ purchaseInFlight: false });
-    return { ok: true, isPro: usePurchasesStore.getState().isPro };
+    return { ok: true, isPro: getIsPro() };
   } catch (e) {
     usePurchasesStore.setState({ purchaseInFlight: false });
     if (isPurchaseCancelled(e)) {
@@ -481,7 +477,7 @@ export async function restorePurchases(): Promise<PurchaseResult> {
     const info = await client.restorePurchases();
     persistIsPro(isProFromCustomerInfo(info));
     usePurchasesStore.setState({ purchaseInFlight: false });
-    return { ok: true, isPro: usePurchasesStore.getState().isPro };
+    return { ok: true, isPro: getIsPro() };
   } catch (e) {
     usePurchasesStore.setState({ purchaseInFlight: false });
     if (isPurchaseCancelled(e)) {
@@ -490,6 +486,11 @@ export async function restorePurchases(): Promise<PurchaseResult> {
     console.warn('購入の復元に失敗しました', e);
     return { ok: false, reason: 'error', message: RESTORE_FAILED_MESSAGE };
   }
+}
+
+/** Proかどうかの判定はここだけを見る（フックが使えない場所向け） */
+export function getIsPro(): boolean {
+  return usePurchasesStore.getState().isPro;
 }
 
 /** Proかどうかの判定はここだけを見る */
@@ -504,21 +505,26 @@ function getRouter(): { push: (href: { pathname: string; params?: Record<string,
 }
 
 export function openPaywall(openedFrom: PaywallOpenedFrom = 'settings'): void {
+  // 設定からの自主オープンはゲートではないので送らない
+  if (openedFrom !== 'settings') {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require('@/lib/analytics').capture('pro_gate_shown', { from: openedFrom });
+  }
   getRouter().push({ pathname: '/paywall', params: { openedFrom } });
 }
 
 async function resolveProOrOpenPaywall(openedFrom: PaywallOpenedFrom): Promise<boolean> {
-  if (usePurchasesStore.getState().isPro) {
+  if (getIsPro()) {
     if (lastRefreshFailed) void refreshPurchases();
     return true;
   }
 
   if (!usePurchasesStore.getState().ready) {
     await initPurchases();
-    if (usePurchasesStore.getState().isPro) return true;
+    if (getIsPro()) return true;
   } else if (lastRefreshFailed) {
     await refreshPurchases();
-    if (usePurchasesStore.getState().isPro) return true;
+    if (getIsPro()) return true;
   }
 
   openPaywall(openedFrom);
@@ -529,7 +535,7 @@ async function resolveProOrOpenPaywall(openedFrom: PaywallOpenedFrom): Promise<b
 export async function requireProOrOpenPaywall(openedFrom: PaywallOpenedFrom): Promise<boolean> {
   if (gateInFlight) {
     await gateInFlight;
-    return usePurchasesStore.getState().isPro;
+    return getIsPro();
   }
   gateInFlight = resolveProOrOpenPaywall(openedFrom).finally(() => {
     gateInFlight = null;

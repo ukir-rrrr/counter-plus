@@ -61,9 +61,10 @@ AIに頼むときは「implementation-plan.md のステップ N を実装して�
 
 ## ステップ8：広告と計測
 
-- [ ] expo-tracking-transparency で初回起動時にATT
-- [ ] `src/lib/ads.tsx`：ホーム最下部にアダプティブバナー（Proなら非表示、開発中はテストID）
-- [ ] `src/lib/analytics.ts`：PostHog のイベント（architecture.md の表のとおり。入力内容は送らない）
+- [x] expo-tracking-transparency でホーム表示後にATT（スプラッシュ中は出さない。拒否時は非パーソナライズ）
+- [x] `src/lib/ads.tsx`：ホーム最下部にアダプティブバナー（Proなら非表示、開発中はテストID）
+- [x] `src/lib/analytics.ts`：PostHog のイベント（architecture.md の表のとおり。入力内容は送らない）
+- [ ] AdMob / PostHog のダッシュボード作業と実機確認（オーナー作業。手順は `docs/ads-analytics-setup.md`）
 
 ## ステップ9：リリース準備
 

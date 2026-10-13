@@ -70,7 +70,13 @@ export function PaywallView({ openedFrom: openedFromParam }: { openedFrom?: stri
   });
 
   const handleBuy = () => {
-    void purchasePro().then((result) => showPurchaseResult(result, 'buy'));
+    void purchasePro().then((result) => {
+      if (result.ok && result.isPro) {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        require('@/lib/analytics').capture('purchase_completed', { from: openedFrom });
+      }
+      showPurchaseResult(result, 'buy');
+    });
   };
 
   const handleRestore = () => {

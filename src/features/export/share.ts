@@ -69,6 +69,8 @@ export async function shareCsvFile(
 
     try {
       await writer.share(uri, fileName);
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('@/lib/analytics').capture('csv_exported');
       return { ok: true };
     } catch (e: unknown) {
       return {

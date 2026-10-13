@@ -101,6 +101,58 @@ jest.mock('expo-modules-core', () => {
   };
 });
 
+jest.mock('expo-tracking-transparency', () => ({
+  isAvailable: jest.fn(() => false),
+  requestTrackingPermissionsAsync: jest.fn(async () => ({
+    status: 'denied',
+    granted: false,
+    canAskAgain: true,
+    expires: 'never',
+  })),
+  getTrackingPermissionsAsync: jest.fn(async () => ({
+    status: 'undetermined',
+    granted: false,
+    canAskAgain: true,
+    expires: 'never',
+  })),
+}));
+
+jest.mock('react-native-google-mobile-ads', () => ({
+  __esModule: true,
+  default: () => ({
+    initialize: jest.fn(async () => {}),
+    setRequestConfiguration: jest.fn(async () => {}),
+  }),
+  MobileAds: () => ({
+    initialize: jest.fn(async () => {}),
+    setRequestConfiguration: jest.fn(async () => {}),
+  }),
+  BannerAd: function MockBannerAd() {
+    return null;
+  },
+  BannerAdSize: {
+    LARGE_ANCHORED_ADAPTIVE_BANNER: 'LARGE_ANCHORED_ADAPTIVE_BANNER',
+    BANNER: 'BANNER',
+  },
+  TestIds: {
+    ADAPTIVE_BANNER: 'ca-app-pub-3940256099942544/2435281174',
+  },
+}));
+
+jest.mock('posthog-react-native', () => ({
+  __esModule: true,
+  default: jest.fn().mockImplementation(() => ({
+    capture: jest.fn(),
+    optOut: jest.fn(),
+    optIn: jest.fn(),
+  })),
+  PostHog: jest.fn().mockImplementation(() => ({
+    capture: jest.fn(),
+    optOut: jest.fn(),
+    optIn: jest.fn(),
+  })),
+}));
+
 jest.mock('react-native-purchases', () => ({
   __esModule: true,
   default: {

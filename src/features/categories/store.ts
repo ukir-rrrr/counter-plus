@@ -71,6 +71,8 @@ export const useCategoriesStore = create<CategoriesState>((set, get) => {
         const categories = get().categories;
         const catWithStats: CategoryWithStats = { ...newCat, itemCount: 0, total: 0 };
         set({ categories: [...categories, catWithStats] });
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        require('@/lib/analytics').capture('category_created');
         return catWithStats;
       } catch (e) {
         console.warn('カテゴリの作成に失敗', e);
