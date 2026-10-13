@@ -33,4 +33,10 @@ describe('EXPO_PUBLIC_ の読み方', () => {
     expect(src).toMatch(/getIsPro\(/);
     expect(src).not.toMatch(/usePurchasesStore\.getState/);
   });
+
+  it('バナーのテストユニットIDは __DEV__ の内側だけに書く', () => {
+    const src = readLibSource('ads.tsx');
+    expect(src).toMatch(/if \(__DEV__\) \{[\s\S]*2435281174/);
+    expect(src).toMatch(/if \(isGoogleSampleAdId\(id\)\) return null/);
+  });
 });

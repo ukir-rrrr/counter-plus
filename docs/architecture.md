@@ -103,6 +103,8 @@ counter-plus/
       export.tsx            # CSV出力（Pro）
       settings.tsx          # 設定
       paywall.tsx           # Pro購入
+      legal/terms.tsx       # 利用規約
+      legal/privacy.tsx     # プライバシーポリシー
     db/
       schema.ts             # Drizzleのテーブル定義
       client.ts             # SQLiteの接続
@@ -113,6 +115,7 @@ counter-plus/
       history/
       export/               # CSV生成と共有
       settings/
+      legal/                # 利用規約・プライバシーの本文と画面
     lib/
       purchases.ts          # RevenueCat、useIsPro() / getIsPro()
       ads.tsx               # バナー（Proなら表示しない）
@@ -166,5 +169,5 @@ EASの3つのプロファイル（development / preview / production）で進め
 2. **開発**：`development` プロファイルのDevelopment Buildを自分のiPhoneに入れ、ホットリロードで開発する
 3. **課金の確認**：Sandboxのテストアカウントで、購入・復元・広告が消えることを確かめる
 4. **テスト配布**：`preview` または `production` ビルドをTestFlightで配る
-5. **提出**：`eas submit` でApp Store Connectへ。スクリーンショット、説明文、プライバシーポリシーのURL、プライバシーの申告（広告と計測の分）を用意する
+5. **提出**：`eas submit` でApp Store Connectへ。スクリーンショット、説明文、プライバシーポリシーのURL、プライバシーの申告（広告と計測の分）を用意する。手順は `docs/release-checklist.md`
 6. **公開後の小さな修正**：JavaScriptだけの変更はEAS Updateで配信できる。ネイティブの変更を含む場合は再提出する

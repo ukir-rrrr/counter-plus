@@ -68,8 +68,11 @@ AIに頼むときは「implementation-plan.md のステップ N を実装して�
 
 ## ステップ9：リリース準備
 
-- [ ] アプリアイコンとスプラッシュ
-- [ ] プライバシーポリシーと利用規約のページ
-- [ ] App Store の説明文・キーワード・スクリーンショット
-- [ ] TestFlight で実機テスト（できれば実際の棚卸しで試してもらう）
-- [ ] `eas build --profile production` → `eas submit`
+- [x] アプリアイコンとスプラッシュ（ブランド色。テンプレートの Expo アイコンを置き換え）
+- [x] プライバシーポリシーと利用規約のページ（アプリ内。公開用の写しは `docs/legal/`）
+- [x] App Store の説明文・キーワード・スクリーンショット計画（`docs/app-store-listing.md`）
+- [x] リリースチェックリスト（`docs/release-checklist.md`。ASC / RevenueCat / AdMob / PostHog / EAS）
+- [x] eas.json の development / preview / production（環境変数は EAS、秘密はコミットしない）
+- [x] PrivacyInfo・日本語の ATT 文言。本番ビルドにテスト広告IDを入れない
+- [ ] TestFlight で実機テスト（できれば実際の棚卸しで試してもらう）（オーナー作業）
+- [ ] `eas build --profile production` → `eas submit`（オーナー作業。手順は `docs/release-checklist.md`）

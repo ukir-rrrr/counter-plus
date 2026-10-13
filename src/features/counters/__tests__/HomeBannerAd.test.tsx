@@ -6,7 +6,6 @@ import {
   HomeBannerAd,
   resetAdsForTests,
   setBannerAdComponentForTests,
-  TEST_BANNER_UNIT_IDS,
   useAdsStore,
 } from '@/lib/ads';
 import { resetPurchasesForTests, usePurchasesStore } from '@/lib/purchases';
@@ -39,7 +38,7 @@ describe('HomeBannerAd 表示', () => {
     useAdsStore.setState({
       initialized: true,
       available: true,
-      unitId: TEST_BANNER_UNIT_IDS.ios,
+      unitId: 'ca-app-pub-test/banner',
     });
     const { getByTestId, unmount } = await render(<HomeBannerAd />);
     expect(getByTestId('home-banner-ad')).toBeTruthy();
@@ -52,7 +51,7 @@ describe('HomeBannerAd 表示', () => {
     useAdsStore.setState({
       initialized: true,
       available: true,
-      unitId: TEST_BANNER_UNIT_IDS.ios,
+      unitId: 'ca-app-pub-test/banner',
     });
     const { queryByTestId, unmount } = await render(<HomeBannerAd />);
     expect(queryByTestId('home-banner-ad')).toBeNull();
@@ -72,7 +71,7 @@ describe('HomeBannerAd 表示', () => {
     useAdsStore.setState({
       initialized: true,
       available: true,
-      unitId: TEST_BANNER_UNIT_IDS.ios,
+      unitId: 'ca-app-pub-test/banner',
     });
     setBannerAdComponentForTests(FailBanner);
     const { queryByTestId, unmount } = await render(<HomeBannerAd />);
