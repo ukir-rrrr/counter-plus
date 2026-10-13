@@ -37,8 +37,10 @@ export function HomeHeader({
         <ChevronDownIcon color={c.ink} />
       </Pressable>
       <Pressable
+        testID="home-settings"
         accessibilityRole="button"
         accessibilityLabel="設定"
+        onPress={() => router.push('/settings')}
         className="h-11 w-11 items-center justify-center rounded-control active:opacity-70">
         <SettingsIcon color={c.ink} />
       </Pressable>

@@ -1,21 +1,91 @@
 import { create } from 'zustand';
 
-import { getBooleanSetting, settingKeys } from './repository';
+import { getBooleanSetting, setBooleanSetting, settingKeys } from './repository';
+
+export const SETTINGS_SAVE_FAILED_MESSAGE = '設定を保存できませんでした';
 
 type SettingsState = {
   haptics: boolean;
   keepAwake: boolean;
+  error: string | null;
   load: () => Promise<void>;
+  setHaptics: (value: boolean) => void;
+  setKeepAwake: (value: boolean) => void;
 };
 
-export const useSettingsStore = create<SettingsState>((set) => ({
-  haptics: true,
-  keepAwake: true,
-  load: async () => {
-    const [haptics, keepAwake] = await Promise.all([
-      getBooleanSetting(settingKeys.haptics, true),
-      getBooleanSetting(settingKeys.keepAwake, true),
-    ]);
-    set({ haptics, keepAwake });
-  },
-}));
+// 書き込みは1件ずつ順番に行う。連打しても最後の値が残る
+let writeQueue: Promise<void> = Promise.resolve();
+
+function enqueueWrite(write: () => void, onError: () => void): void {
+  writeQueue = writeQueue
+    .then(() => new Promise<void>((resolve) => setTimeout(resolve, 0)))
+    .then(write)
+    .catch((e: unknown) => {
+      console.warn('設定を保存できませんでした', e);
+      onError();
+    });
+}
+
+async function waitForWrites(): Promise<void> {
+  let current: Promise<void>;
+  do {
+    current = writeQueue;
+    await current;
+  } while (current !== writeQueue);
+}
+
+/** 未完了の書き込みが終わるまで待つ */
+export async function waitForSettingsWrites(): Promise<void> {
+  await waitForWrites();
+}
+
+/** テスト用。キューを空に戻す */
+export function resetSettingsWriteQueueForTests(): void {
+  writeQueue = Promise.resolve();
+}
+
+function readAllSettings(): Pick<SettingsState, 'haptics' | 'keepAwake'> {
+  return {
+    haptics: getBooleanSetting(settingKeys.haptics, true),
+    keepAwake: getBooleanSetting(settingKeys.keepAwake, true),
+  };
+}
+
+export const useSettingsStore = create<SettingsState>((set) => {
+  function persist(key: string, value: boolean, apply: () => void): void {
+    apply();
+    enqueueWrite(
+      () => setBooleanSetting(key, value),
+      () => {
+        try {
+          set({ ...readAllSettings(), error: SETTINGS_SAVE_FAILED_MESSAGE });
+        } catch {
+          set({ error: SETTINGS_SAVE_FAILED_MESSAGE });
+        }
+      },
+    );
+  }
+
+  return {
+    haptics: true,
+    keepAwake: true,
+    error: null,
+    load: async () => {
+      try {
+        await waitForWrites();
+        set({ ...readAllSettings(), error: null });
+      } catch (e: unknown) {
+        console.warn('設定を読み込めませんでした', e);
+        set({
+          error: e instanceof Error ? e.message : '設定を読み込めませんでした',
+        });
+      }
+    },
+    setHaptics: (value) => {
+      persist(settingKeys.haptics, value, () => set({ haptics: value, error: null }));
+    },
+    setKeepAwake: (value) => {
+      persist(settingKeys.keepAwake, value, () => set({ keepAwake: value, error: null }));
+    },
+  };
+});

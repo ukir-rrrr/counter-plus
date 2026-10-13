@@ -7,9 +7,10 @@ import DraggableFlatList, {
 } from 'react-native-draggable-flatlist';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { CheckCircleIcon, CloseIcon, FolderIcon, PlusIcon } from '@/components/icons';
+import { CloseIcon, PlusIcon } from '@/components/icons';
 import { useThemeColors } from '@/constants/use-theme-colors';
 import { CategoryNameDialog } from '@/features/categories/components/CategoryNameDialog';
+import { CategoryRow } from '@/features/categories/components/CategoryRow';
 import { defaultCategoryName, resolveCategoryName } from '@/features/categories/name';
 import {
   selectGrandTotal,
@@ -68,12 +69,13 @@ function GrandTotalCard() {
   );
 }
 
-function CategoryRow({
+function DraggableCategoryRow({
   item,
-  isSelected,
-  isEditing,
   drag,
   isActive,
+  getIndex,
+  isSelected,
+  isEditing,
   onSelect,
   onRename,
   onDelete,
@@ -84,55 +86,19 @@ function CategoryRow({
   onRename: () => void;
   onDelete: () => void;
 }) {
-  const c = useThemeColors();
-
-  const handlePress = () => {
-    if (isEditing) return;
-    onSelect();
-  };
-
-  const handleLongPress = () => {
-    if (isEditing) {
-      drag();
-    } else {
-      tapHaptic();
-      Alert.alert(item.name, undefined, [
-        { text: '名前を変更', onPress: onRename },
-        { text: '削除', style: 'destructive', onPress: onDelete },
-        { text: 'キャンセル', style: 'cancel' },
-      ]);
-    }
-  };
-
   return (
     <ScaleDecorator>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ selected: isSelected }}
-        onPress={handlePress}
-        onLongPress={handleLongPress}
-        delayLongPress={200}
-        disabled={isActive}
-        style={{ backgroundColor: isSelected ? c.accentSoft : c.surface }}
-        className="min-h-16 flex-row items-center gap-3 border-b border-divider px-3.5 active:opacity-70">
-        <View
-          style={{ backgroundColor: c.neutralButton }}
-          className="h-9 w-9 items-center justify-center rounded-[10px]">
-          <FolderIcon color={c.inkMuted} />
-        </View>
-        <View className="flex-1 gap-0.5">
-          <Text className="font-sans-bold text-body text-ink" numberOfLines={1}>
-            {item.name}
-          </Text>
-          <Text className="font-sans text-label text-ink-muted">{item.itemCount} 項目</Text>
-        </View>
-        <Text className="font-mono-semibold text-count-sm text-ink">
-          {item.total.toLocaleString()}
-        </Text>
-        <View className="w-5.5 items-center justify-center">
-          {isSelected && <CheckCircleIcon color={c.accent} size={20} />}
-        </View>
-      </Pressable>
+      <CategoryRow
+        item={item}
+        index={getIndex() ?? 0}
+        isSelected={isSelected}
+        isEditing={isEditing}
+        isActive={isActive}
+        onDrag={drag}
+        onSelect={onSelect}
+        onRename={onRename}
+        onDelete={onDelete}
+      />
     </ScaleDecorator>
   );
 }
@@ -243,7 +209,7 @@ export default function CategoriesScreen() {
 
   const renderItem = useCallback(
     (params: RenderItemParams<CategoryWithStats>) => (
-      <CategoryRow
+      <DraggableCategoryRow
         {...params}
         isSelected={params.item.id === selectedId}
         isEditing={isEditing}
@@ -267,13 +233,12 @@ export default function CategoriesScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           onDragEnd={handleDragEnd}
-          activationDistance={isEditing ? 0 : 10}
           ListFooterComponent={<AddCategoryButton onAdd={handleAdd} />}
         />
       </View>
 
       <Text className="px-screen py-3 text-center font-sans text-hint text-ink-subtle">
-        長押しで名前の変更・並べ替え・削除
+        長押しで名前の変更・削除、左のつまみで並べ替え
       </Text>
 
       <View style={{ height: insets.bottom }} />

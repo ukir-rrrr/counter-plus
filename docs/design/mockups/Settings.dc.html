@@ -69,7 +69,6 @@ class Component extends DCLogic {
     const st = this.state || {};
     const defs = [
       { key: 'haptics', label: 'タップ時の振動', desc: '＋・−を押したときに軽く振動', def: true },
-      { key: 'sound', label: 'タップ音', desc: '静かな場所ではオフがおすすめ', def: false },
       { key: 'awake', label: '画面を消さない', desc: '数えている間は画面を点けたまま', def: true }
     ];
     const toggles = defs.map((d) => {
