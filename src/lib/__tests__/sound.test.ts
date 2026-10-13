@@ -2,9 +2,33 @@ import { createAudioPlayer } from 'expo-audio';
 
 import { useSettingsStore } from '@/features/settings/store';
 
-import { resetTapSoundForTests, setTapSoundPlayerForTests, tapSound } from '../sound';
+import {
+  resetTapSoundForTests,
+  setTapSoundPlayerForTests,
+  TAP_SOUND_POOL_SIZE,
+  tapSound,
+} from '../sound';
 
 const createAudioPlayerMock = createAudioPlayer as jest.MockedFunction<typeof createAudioPlayer>;
+
+function deferred<T = void>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
+function mockPlayer() {
+  return {
+    play: jest.fn(),
+    pause: jest.fn(),
+    seekTo: jest.fn(() => Promise.resolve()),
+    remove: jest.fn(),
+  };
+}
 
 describe('tapSound', () => {
   const playerFn = jest.fn();
@@ -12,7 +36,8 @@ describe('tapSound', () => {
   beforeEach(() => {
     playerFn.mockReset();
     resetTapSoundForTests();
-    createAudioPlayerMock.mockClear();
+    createAudioPlayerMock.mockReset();
+    createAudioPlayerMock.mockImplementation(() => mockPlayer() as never);
     useSettingsStore.setState({ haptics: true, sound: false, keepAwake: true, error: null });
   });
 
@@ -27,17 +52,67 @@ describe('tapSound', () => {
     expect(playerFn).toHaveBeenCalledTimes(1);
   });
 
-  it('通常：オンなら expo-audio で先頭から再生する', () => {
+  it('通常：オンなら pause → seekTo(0) 完了後に play する', async () => {
+    const seek = deferred<void>();
     const play = jest.fn();
-    const seekTo = jest.fn();
-    createAudioPlayerMock.mockReturnValue({ play, seekTo, remove: jest.fn() } as never);
+    const pause = jest.fn();
+    const seekTo = jest.fn(() => seek.promise);
+    createAudioPlayerMock.mockReturnValue({ play, pause, seekTo, remove: jest.fn() } as never);
     useSettingsStore.setState({ sound: true });
 
     tapSound();
+    await Promise.resolve();
 
-    expect(createAudioPlayerMock).toHaveBeenCalledTimes(1);
+    expect(pause).toHaveBeenCalledTimes(1);
     expect(seekTo).toHaveBeenCalledWith(0);
+    expect(play).not.toHaveBeenCalled();
+
+    seek.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
     expect(play).toHaveBeenCalledTimes(1);
+  });
+
+  it('連続タップでも毎回 play する', async () => {
+    const a = mockPlayer();
+    const b = mockPlayer();
+    const c = mockPlayer();
+    createAudioPlayerMock
+      .mockReturnValueOnce(a as never)
+      .mockReturnValueOnce(b as never)
+      .mockReturnValueOnce(c as never);
+    useSettingsStore.setState({ sound: true });
+
+    tapSound();
+    tapSound();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(a.play).toHaveBeenCalledTimes(1);
+    expect(b.play).toHaveBeenCalledTimes(1);
+    expect(a.seekTo).toHaveBeenCalledWith(0);
+    expect(b.seekTo).toHaveBeenCalledWith(0);
+  });
+
+  it('連打：プールを回して毎回 play する', async () => {
+    const players = [mockPlayer(), mockPlayer(), mockPlayer()];
+    createAudioPlayerMock
+      .mockReturnValueOnce(players[0] as never)
+      .mockReturnValueOnce(players[1] as never)
+      .mockReturnValueOnce(players[2] as never);
+    useSettingsStore.setState({ sound: true });
+
+    for (let i = 0; i < 6; i++) tapSound();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(createAudioPlayerMock).toHaveBeenCalledTimes(TAP_SOUND_POOL_SIZE);
+    expect(players[0].play).toHaveBeenCalledTimes(2);
+    expect(players[1].play).toHaveBeenCalledTimes(2);
+    expect(players[2].play).toHaveBeenCalledTimes(2);
+    expect(players[0].pause).toHaveBeenCalled();
+    expect(players[1].pause).toHaveBeenCalled();
+    expect(players[2].pause).toHaveBeenCalled();
   });
 
   it('空：オフ（既定）なら鳴らさない', () => {
@@ -55,30 +130,16 @@ describe('tapSound', () => {
     expect(() => tapSound()).not.toThrow();
   });
 
-  it('expo-audio の play が失敗しても投げない', () => {
+  it('seekTo が失敗しても投げない', async () => {
     createAudioPlayerMock.mockReturnValue({
-      play: () => {
-        throw new Error('native');
-      },
-      seekTo: jest.fn(),
+      play: jest.fn(),
+      pause: jest.fn(),
+      seekTo: () => Promise.reject(new Error('seek')),
       remove: jest.fn(),
     } as never);
     useSettingsStore.setState({ sound: true });
     expect(() => tapSound()).not.toThrow();
-  });
-
-  it('連打しても毎回先頭から再生する', () => {
-    const play = jest.fn();
-    const seekTo = jest.fn();
-    createAudioPlayerMock.mockReturnValue({ play, seekTo, remove: jest.fn() } as never);
-    useSettingsStore.setState({ sound: true });
-
-    tapSound();
-    tapSound();
-    tapSound();
-
-    expect(createAudioPlayerMock).toHaveBeenCalledTimes(1);
-    expect(seekTo).toHaveBeenCalledTimes(3);
-    expect(play).toHaveBeenCalledTimes(3);
+    await Promise.resolve();
+    await Promise.resolve();
   });
 });

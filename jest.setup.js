@@ -62,7 +62,8 @@ jest.mock('expo-constants', () => ({
 jest.mock('expo-audio', () => ({
   createAudioPlayer: jest.fn(() => ({
     play: jest.fn(),
-    seekTo: jest.fn(),
+    pause: jest.fn(),
+    seekTo: jest.fn(() => Promise.resolve()),
     remove: jest.fn(),
   })),
   setAudioModeAsync: jest.fn(async () => {}),
