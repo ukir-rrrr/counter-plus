@@ -19,6 +19,7 @@ import { db } from '@/db/client';
 import migrations from '@/db/migrations/migrations';
 import { ensureDefaultCategory } from '@/features/categories/repository';
 import { useSettingsStore } from '@/features/settings/store';
+import { initPurchases } from '@/lib/purchases';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -58,6 +59,11 @@ export default function RootLayout() {
       .catch((e: unknown) => setSeedError(e instanceof Error ? e : new Error(String(e))));
   }, [migration.success]);
 
+  // 課金の初期化は起動を止めない。Expo Go やキー未設定でも落ちない
+  useEffect(() => {
+    void initPurchases();
+  }, []);
+
   const error = migration.error ?? fontError ?? seedError;
   const ready = (fontsLoaded && seeded) || error != null;
 
@@ -92,6 +98,7 @@ export default function RootLayout() {
               contentStyle: { backgroundColor: 'transparent' },
             }}
           />
+          <Stack.Screen name="paywall" options={{ presentation: 'modal', headerShown: false }} />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

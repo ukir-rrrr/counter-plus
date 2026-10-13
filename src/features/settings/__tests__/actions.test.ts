@@ -34,7 +34,7 @@ describe('restorePurchases', () => {
     setRestorePurchasesImplForTests(null);
   });
 
-  it('通常：ステップ7までは unavailable を返す', async () => {
+  it('通常：ネイティブ未導入では unavailable を返す', async () => {
     const result = await restorePurchases();
     expect(result).toEqual({
       ok: false,

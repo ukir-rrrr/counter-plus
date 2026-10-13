@@ -19,7 +19,9 @@ import {
   type CategoryWithStats,
 } from '@/features/categories/store';
 import { useCountersStore } from '@/features/counters/store';
+import { ProBadge } from '@/features/purchases/components/ProBadge';
 import { tapHaptic } from '@/lib/haptics';
+import { canAddCategory, openPaywall, useIsPro } from '@/lib/purchases';
 
 function Header({ isEditing, onToggleEdit }: { isEditing: boolean; onToggleEdit: () => void }) {
   const c = useThemeColors();
@@ -103,17 +105,19 @@ function DraggableCategoryRow({
   );
 }
 
-function AddCategoryButton({ onAdd }: { onAdd: () => void }) {
+function AddCategoryButton({ onAdd, showPro }: { onAdd: () => void; showPro: boolean }) {
   const c = useThemeColors();
 
   return (
     <Pressable
+      testID="categories-add"
       accessibilityRole="button"
-      accessibilityLabel="カテゴリを追加"
+      accessibilityLabel={showPro ? 'カテゴリを追加（Pro）' : 'カテゴリを追加'}
       onPress={onAdd}
       className="h-14 flex-row items-center justify-center gap-1.5 active:opacity-70">
       <PlusIcon color={c.accent} size={18} strokeWidth={2} />
       <Text className="font-sans-medium text-body-sm text-accent">カテゴリを追加</Text>
+      {showPro ? <ProBadge /> : null}
     </Pressable>
   );
 }
@@ -134,6 +138,8 @@ export default function CategoriesScreen() {
   const reorder = useCategoriesStore((s) => s.reorder);
 
   const countersLoad = useCountersStore((s) => s.load);
+  const isPro = useIsPro();
+  const addLocked = !canAddCategory(isPro, categories.length);
 
   useEffect(() => {
     load();
@@ -152,6 +158,10 @@ export default function CategoriesScreen() {
   const addFallbackName = defaultCategoryName(categories.length);
 
   const handleAdd = () => {
+    if (!canAddCategory(isPro, categories.length)) {
+      openPaywall('category');
+      return;
+    }
     setAdding(true);
   };
 
@@ -233,9 +243,17 @@ export default function CategoriesScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           onDragEnd={handleDragEnd}
-          ListFooterComponent={<AddCategoryButton onAdd={handleAdd} />}
+          ListFooterComponent={<AddCategoryButton onAdd={handleAdd} showPro={addLocked} />}
         />
       </View>
+
+      {addLocked ? (
+        <Text
+          testID="categories-free-note"
+          className="px-screen pt-3 text-center font-sans text-hint text-ink-subtle">
+          無料版のカテゴリは1つまでです。棚や場所ごとに分けるには Pro が必要です。
+        </Text>
+      ) : null}
 
       <Text className="px-screen py-3 text-center font-sans text-hint text-ink-subtle">
         長押しで名前の変更・削除、左のつまみで並べ替え

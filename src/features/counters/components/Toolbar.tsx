@@ -4,23 +4,19 @@ import { Alert, Pressable, Text, View } from 'react-native';
 import { ClockIcon, DownloadIcon, SortIcon } from '@/components/icons';
 import { useThemeColors } from '@/constants/use-theme-colors';
 import { autoSortCounters } from '@/features/categories/repository';
+import { ProBadge } from '@/features/purchases/components/ProBadge';
 import { useCountersStore } from '@/features/counters/store';
 import { tapHaptic } from '@/lib/haptics';
-
-function ProBadge() {
-  return (
-    <View className="rounded bg-accent px-[5px] py-px">
-      <Text className="font-sans-bold text-hint tracking-wide text-on-accent">PRO</Text>
-    </View>
-  );
-}
+import { requireProOrOpenPaywall, useIsPro } from '@/lib/purchases';
 
 export function Toolbar() {
   const c = useThemeColors();
+  const isPro = useIsPro();
   const categoryId = useCountersStore((s) => s.categoryId);
   const load = useCountersStore((s) => s.load);
 
   const handleSort = () => {
+    if (!requireProOrOpenPaywall('sort')) return;
     if (!categoryId) return;
 
     Alert.alert('並べ替え', '項目の並び順を選んでください', [
@@ -57,26 +53,33 @@ export function Toolbar() {
       <Pressable
         testID="toolbar-history"
         accessibilityRole="button"
-        accessibilityLabel="履歴（Pro）"
-        onPress={() => router.push('/history')}
+        accessibilityLabel={isPro ? '履歴' : '履歴（Pro）'}
+        onPress={() => {
+          if (!requireProOrOpenPaywall('history')) return;
+          router.push('/history');
+        }}
         className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-control border border-border bg-surface active:opacity-70">
         <ClockIcon color={c.ink} />
         <Text className="font-sans-medium text-label text-ink">履歴</Text>
-        <ProBadge />
+        {!isPro ? <ProBadge /> : null}
       </Pressable>
       <Pressable
         testID="toolbar-export"
         accessibilityRole="button"
-        accessibilityLabel="CSV出力（Pro）"
-        onPress={() => router.push('/export')}
+        accessibilityLabel={isPro ? 'CSV出力' : 'CSV出力（Pro）'}
+        onPress={() => {
+          if (!requireProOrOpenPaywall('csv')) return;
+          router.push('/export');
+        }}
         className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-control border border-border bg-surface active:opacity-70">
         <DownloadIcon color={c.ink} />
         <Text className="font-sans-medium text-label text-ink">CSV出力</Text>
-        <ProBadge />
+        {!isPro ? <ProBadge /> : null}
       </Pressable>
       <Pressable
+        testID="toolbar-sort"
         accessibilityRole="button"
-        accessibilityLabel="並べ替え"
+        accessibilityLabel={isPro ? '並べ替え' : '並べ替え（Pro）'}
         onPress={handleSort}
         className="h-11 w-11 items-center justify-center rounded-control border border-border bg-surface active:opacity-70">
         <SortIcon color={c.ink} />

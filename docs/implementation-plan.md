@@ -53,11 +53,11 @@ AIに頼むときは「implementation-plan.md のステップ N を実装して�
 
 ## ステップ7：課金（RevenueCat）
 
-- [ ] App Store Connect に買い切り商品を登録し、RevenueCat に Entitlement `pro` を作る
-- [ ] `src/lib/purchases.ts`：初期化、`useIsPro()`、購入、復元
-- [ ] Pro購入画面（openedFrom で特典を強調、履歴の件数を表示、価格はRevenueCatから取得）
-- [ ] Proの制限をかける：2つ目のカテゴリ、自動並べ替え、履歴、CSV出力
-- [ ] Sandbox で購入・復元を確認する
+- [x] App Store Connect / RevenueCat の手順を `docs/revenuecat-setup.md` に書いた（ダッシュボード作業はオーナーが行う）
+- [x] `src/lib/purchases.ts`：初期化、`useIsPro()`、購入、復元
+- [x] Pro購入画面（openedFrom で特典を強調、履歴の件数を表示、価格はRevenueCatから取得）
+- [x] Proの制限をかける：2つ目のカテゴリ、自動並べ替え、履歴、CSV出力
+- [ ] Sandbox で購入・復元を確認する（オーナー作業。手順は `docs/revenuecat-setup.md`）
 
 ## ステップ8：広告と計測
 

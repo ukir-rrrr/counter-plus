@@ -3,6 +3,8 @@ import { Alert } from 'react-native';
 
 import SettingsScreen from '@/app/settings';
 
+import { resetPurchasesForTests, usePurchasesStore } from '@/lib/purchases';
+
 import { resetSettingsActionLocksForTests } from '../actions';
 import { resetSettingsWriteQueueForTests, useSettingsStore } from '../store';
 
@@ -26,15 +28,18 @@ describe('SettingsScreen', () => {
   beforeEach(() => {
     resetSettingsActionLocksForTests();
     resetSettingsWriteQueueForTests();
+    resetPurchasesForTests();
     useSettingsStore.setState({
       haptics: true,
       keepAwake: true,
       error: null,
     });
+    usePurchasesStore.setState({ isPro: false, priceString: null });
     jest.spyOn(Alert, 'alert').mockImplementation(() => {});
   });
 
   afterEach(() => {
+    resetPurchasesForTests();
     jest.restoreAllMocks();
   });
 
@@ -53,7 +58,7 @@ describe('SettingsScreen', () => {
     expect(getByTestId('settings-terms')).toBeTruthy();
     expect(getByTestId('settings-privacy')).toBeTruthy();
     expect(getByTestId('settings-version').props.children).toBe('カウンター＋ バージョン 1.0.0');
-    expect(queryByText(/Proにする/)).toBeNull();
+    expect(getByTestId('settings-pro-banner')).toBeTruthy();
     expect(queryByText('設定を保存できませんでした')).toBeNull();
 
     await act(async () => {
@@ -74,7 +79,7 @@ describe('SettingsScreen', () => {
       fireEvent.press(getByTestId('settings-restore'));
     });
     await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalledWith('準備中', '購入の復元は、準備ができてから使えます。');
+      expect(Alert.alert).toHaveBeenCalledWith('購入を復元できません', '開発ビルドでのみ利用できます');
     });
 
     fireEvent.press(getByTestId('settings-privacy'));
@@ -82,6 +87,13 @@ describe('SettingsScreen', () => {
       expect(Alert.alert).toHaveBeenCalledWith('準備中', 'この機能は準備中です。');
     });
 
+    await unmount();
+  });
+
+  it('Pro なら案内バナーを出さない', async () => {
+    usePurchasesStore.setState({ isPro: true });
+    const { queryByTestId, unmount } = await render(<SettingsScreen />);
+    expect(queryByTestId('settings-pro-banner')).toBeNull();
     await unmount();
   });
 

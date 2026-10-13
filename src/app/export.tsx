@@ -17,12 +17,14 @@ import {
 } from '@/features/export/csv';
 import { listExportRows } from '@/features/export/repository';
 import { shareCsvFile } from '@/features/export/share';
+import { useIsPro } from '@/lib/purchases';
 
 type Scope = 'current' | 'all';
 
 export default function ExportScreen() {
   const insets = useSafeAreaInsets();
   const c = useThemeColors();
+  const isPro = useIsPro();
 
   const categories = useCategoriesStore((s) => s.categories);
   const selectedId = useCategoriesStore((s) => s.selectedId);
@@ -60,9 +62,13 @@ export default function ExportScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      if (!isPro) {
+        router.replace({ pathname: '/paywall', params: { openedFrom: 'csv' } });
+        return;
+      }
       categoriesLoad();
       loadRows();
-    }, [categoriesLoad, loadRows]),
+    }, [isPro, categoriesLoad, loadRows]),
   );
 
   const csv = useMemo(() => buildCsv(rows, options), [rows, options]);
@@ -71,6 +77,8 @@ export default function ExportScreen() {
     [scope, categoryName, fileNow],
   );
   const lines = useMemo(() => previewLines(csv), [csv]);
+
+  if (!isPro) return null;
 
   const close = () => {
     if (router.canGoBack()) router.back();
