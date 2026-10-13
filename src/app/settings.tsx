@@ -7,7 +7,6 @@ import { SettingsHeader } from '@/features/settings/components/SettingsHeader';
 import { SettingsLinkRow } from '@/features/settings/components/SettingsLinkRow';
 import { SettingsSection } from '@/features/settings/components/SettingsSection';
 import { SettingsToggle } from '@/features/settings/components/SettingsToggle';
-import { TapSoundDebugPanel } from '@/features/settings/components/TapSoundDebugPanel';
 import { useSettingsStore } from '@/features/settings/store';
 import { getAppVersion } from '@/features/settings/version';
 import { tapHaptic } from '@/lib/haptics';
@@ -20,10 +19,8 @@ function showActionResult(result: SettingsActionResult): void {
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const haptics = useSettingsStore((s) => s.haptics);
-  const sound = useSettingsStore((s) => s.sound);
   const keepAwake = useSettingsStore((s) => s.keepAwake);
   const setHaptics = useSettingsStore((s) => s.setHaptics);
-  const setSound = useSettingsStore((s) => s.setSound);
   const setKeepAwake = useSettingsStore((s) => s.setKeepAwake);
   const error = useSettingsStore((s) => s.error);
   const version = getAppVersion();
@@ -44,7 +41,6 @@ export default function SettingsScreen() {
             {error}
           </Text>
         ) : null}
-        {__DEV__ ? <TapSoundDebugPanel /> : null}
         {/* Pro案内と実リンクはステップ7・9。ここでは出さない */}
         <SettingsSection title="カウント">
           <SettingsToggle
@@ -54,16 +50,6 @@ export default function SettingsScreen() {
             value={haptics}
             onValueChange={(next) => {
               setHaptics(next);
-              tapHaptic();
-            }}
-          />
-          <SettingsToggle
-            testID="settings-toggle-sound"
-            label="タップ音"
-            description="静かな場所ではオフがおすすめ"
-            value={sound}
-            onValueChange={(next) => {
-              setSound(next);
               tapHaptic();
             }}
           />

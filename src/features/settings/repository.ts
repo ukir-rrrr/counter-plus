@@ -5,9 +5,9 @@ import { appSettings } from '@/db/schema';
 
 import { parseBooleanSetting, serializeBooleanSetting } from './boolean';
 
+/** 読むキーはこれだけ。古いインストールの sound 行などは無視する */
 export const settingKeys = {
   haptics: 'haptics',
-  sound: 'sound',
   keepAwake: 'keep_awake',
 } as const;
 

@@ -26,16 +26,16 @@ describe('SettingsToggle', () => {
     const onValueChange = jest.fn();
     const { getByTestId } = await render(
       <SettingsToggle
-        testID="settings-toggle-sound"
-        label="タップ音"
-        description="静かな場所ではオフがおすすめ"
+        testID="settings-toggle-keep-awake"
+        label="画面を消さない"
+        description="数えている間は画面を点けたまま"
         value={false}
         onValueChange={onValueChange}
       />,
     );
 
     await act(async () => {
-      fireEvent.press(getByTestId('settings-toggle-sound'));
+      fireEvent.press(getByTestId('settings-toggle-keep-awake'));
     });
     expect(onValueChange).toHaveBeenCalledWith(true);
   });

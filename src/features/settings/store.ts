@@ -6,12 +6,10 @@ export const SETTINGS_SAVE_FAILED_MESSAGE = '設定を保存できませんで�
 
 type SettingsState = {
   haptics: boolean;
-  sound: boolean;
   keepAwake: boolean;
   error: string | null;
   load: () => Promise<void>;
   setHaptics: (value: boolean) => void;
-  setSound: (value: boolean) => void;
   setKeepAwake: (value: boolean) => void;
 };
 
@@ -46,15 +44,14 @@ export function resetSettingsWriteQueueForTests(): void {
   writeQueue = Promise.resolve();
 }
 
-function readAllSettings(): Pick<SettingsState, 'haptics' | 'sound' | 'keepAwake'> {
+function readAllSettings(): Pick<SettingsState, 'haptics' | 'keepAwake'> {
   return {
     haptics: getBooleanSetting(settingKeys.haptics, true),
-    sound: getBooleanSetting(settingKeys.sound, false),
     keepAwake: getBooleanSetting(settingKeys.keepAwake, true),
   };
 }
 
-export const useSettingsStore = create<SettingsState>((set, get) => {
+export const useSettingsStore = create<SettingsState>((set) => {
   function persist(key: string, value: boolean, apply: () => void): void {
     apply();
     enqueueWrite(
@@ -71,7 +68,6 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
 
   return {
     haptics: true,
-    sound: false,
     keepAwake: true,
     error: null,
     load: async () => {
@@ -87,9 +83,6 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
     },
     setHaptics: (value) => {
       persist(settingKeys.haptics, value, () => set({ haptics: value, error: null }));
-    },
-    setSound: (value) => {
-      persist(settingKeys.sound, value, () => set({ sound: value, error: null }));
     },
     setKeepAwake: (value) => {
       persist(settingKeys.keepAwake, value, () => set({ keepAwake: value, error: null }));

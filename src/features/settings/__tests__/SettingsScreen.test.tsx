@@ -28,7 +28,6 @@ describe('SettingsScreen', () => {
     resetSettingsWriteQueueForTests();
     useSettingsStore.setState({
       haptics: true,
-      sound: false,
       keepAwake: true,
       error: null,
     });
@@ -45,10 +44,9 @@ describe('SettingsScreen', () => {
       await Promise.resolve();
     });
 
-    expect(getByTestId('settings-sound-debug')).toBeTruthy();
     expect(getByTestId('settings-toggle-haptics')).toBeTruthy();
-    expect(getByTestId('settings-toggle-sound')).toBeTruthy();
     expect(getByTestId('settings-toggle-keep-awake')).toBeTruthy();
+    expect(queryByText('タップ音')).toBeNull();
     expect(getByTestId('settings-restore')).toBeTruthy();
     expect(getByTestId('settings-review')).toBeTruthy();
     expect(getByTestId('settings-contact')).toBeTruthy();
@@ -62,10 +60,6 @@ describe('SettingsScreen', () => {
       fireEvent.press(getByTestId('settings-toggle-haptics'));
     });
     expect(useSettingsStore.getState().haptics).toBe(false);
-    await act(async () => {
-      fireEvent.press(getByTestId('settings-toggle-sound'));
-    });
-    expect(useSettingsStore.getState().sound).toBe(true);
 
     const keepAwake = getByTestId('settings-toggle-keep-awake');
     await act(async () => {

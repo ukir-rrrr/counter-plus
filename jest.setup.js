@@ -59,24 +59,6 @@ jest.mock('expo-constants', () => ({
   default: { expoConfig: { version: '1.0.0' } },
 }));
 
-jest.mock('expo-audio', () => ({
-  createAudioPlayer: jest.fn(() => ({
-    play: jest.fn(),
-    pause: jest.fn(),
-    seekTo: jest.fn(() => Promise.resolve()),
-    replace: jest.fn(),
-    remove: jest.fn(),
-    playing: false,
-    isLoaded: true,
-    currentTime: 0,
-    currentStatus: { playing: false, didJustFinish: false, currentTime: 0, isLoaded: true },
-    addListener: jest.fn(() => ({ remove: jest.fn() })),
-  })),
-  setAudioModeAsync: jest.fn(async () => {}),
-  setIsAudioActiveAsync: jest.fn(async () => {}),
-  preload: jest.fn(async () => {}),
-}));
-
 // drizzle-orm/expo-sqlite をモック
 jest.mock('drizzle-orm/expo-sqlite', () => ({
   drizzle: jest.fn(() => ({
