@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { appSettings } from '@/db/schema';
 
-import { parseBooleanSetting, serializeBooleanSetting } from './boolean';
+import { parseBooleanSetting, parseOptionalBooleanSetting, serializeBooleanSetting } from './boolean';
 
 /** 読むキーはこれだけ。古いインストールの sound 行などは無視する */
 export const settingKeys = {
@@ -17,6 +17,12 @@ export type SettingKey = (typeof settingKeys)[keyof typeof settingKeys];
 export function getBooleanSetting(key: string, defaultValue: boolean): boolean {
   const row = db.select().from(appSettings).where(eq(appSettings.key, key)).get();
   return parseBooleanSetting(row?.value, defaultValue);
+}
+
+/** 行が無ければ null。Proキャッシュなど「未設定」と false を区別する */
+export function getOptionalBooleanSetting(key: string): boolean | null {
+  const row = db.select().from(appSettings).where(eq(appSettings.key, key)).get();
+  return parseOptionalBooleanSetting(row?.value);
 }
 
 /** 同じキーがあれば上書き、無ければ追加する */

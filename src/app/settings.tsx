@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { Alert, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ProBanner } from '@/features/purchases/components/ProBanner';
 import { openSupportLink, restorePurchases, type SettingsActionResult } from '@/features/settings/actions';
 import { SettingsHeader } from '@/features/settings/components/SettingsHeader';
 import { SettingsLinkRow } from '@/features/settings/components/SettingsLinkRow';
@@ -10,10 +11,20 @@ import { SettingsToggle } from '@/features/settings/components/SettingsToggle';
 import { useSettingsStore } from '@/features/settings/store';
 import { getAppVersion } from '@/features/settings/version';
 import { tapHaptic } from '@/lib/haptics';
+import { RESTORE_NONE_MESSAGE, RESTORE_OK_MESSAGE } from '@/lib/purchases';
 
-function showActionResult(result: SettingsActionResult): void {
+function showSupportResult(result: SettingsActionResult): void {
   if (result.ok || result.reason === 'busy') return;
   Alert.alert('準備中', result.message ?? 'この機能は準備中です。');
+}
+
+function showRestoreResult(result: SettingsActionResult): void {
+  if (result.ok) {
+    Alert.alert(result.isPro ? RESTORE_OK_MESSAGE : RESTORE_NONE_MESSAGE);
+    return;
+  }
+  if (result.reason === 'busy' || result.reason === 'cancelled') return;
+  Alert.alert('購入を復元できません', result.message ?? '開発ビルドでのみ利用できます');
 }
 
 export default function SettingsScreen() {
@@ -41,7 +52,7 @@ export default function SettingsScreen() {
             {error}
           </Text>
         ) : null}
-        {/* Pro案内と実リンクはステップ7・9。ここでは出さない */}
+        <ProBanner />
         <SettingsSection title="カウント">
           <SettingsToggle
             testID="settings-toggle-haptics"
@@ -73,7 +84,7 @@ export default function SettingsScreen() {
             accent
             last
             onPress={() => {
-              void restorePurchases().then(showActionResult);
+              void restorePurchases().then(showRestoreResult);
             }}
           />
         </SettingsSection>
@@ -84,7 +95,7 @@ export default function SettingsScreen() {
             label="App Storeでレビューを書く"
             showChevron
             onPress={() => {
-              void openSupportLink('review').then(showActionResult);
+              void openSupportLink('review').then(showSupportResult);
             }}
           />
           <SettingsLinkRow
@@ -92,7 +103,7 @@ export default function SettingsScreen() {
             label="お問い合わせ"
             showChevron
             onPress={() => {
-              void openSupportLink('contact').then(showActionResult);
+              void openSupportLink('contact').then(showSupportResult);
             }}
           />
           <SettingsLinkRow
@@ -100,7 +111,7 @@ export default function SettingsScreen() {
             label="利用規約"
             showChevron
             onPress={() => {
-              void openSupportLink('terms').then(showActionResult);
+              void openSupportLink('terms').then(showSupportResult);
             }}
           />
           <SettingsLinkRow
@@ -109,7 +120,7 @@ export default function SettingsScreen() {
             showChevron
             last
             onPress={() => {
-              void openSupportLink('privacy').then(showActionResult);
+              void openSupportLink('privacy').then(showSupportResult);
             }}
           />
         </SettingsSection>

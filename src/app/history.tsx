@@ -9,9 +9,11 @@ import { HistoryHeader } from '@/features/history/components/HistoryHeader';
 import { HistoryList } from '@/features/history/components/HistoryList';
 import { filterEventsByCategory, groupHistoryByDate } from '@/features/history/group';
 import { useHistoryStore } from '@/features/history/store';
+import { useIsPro } from '@/lib/purchases';
 
 export default function HistoryScreen() {
   const insets = useSafeAreaInsets();
+  const isPro = useIsPro();
   const [filterId, setFilterId] = useState<string | null>(null);
 
   const categories = useCategoriesStore((s) => s.categories);
@@ -23,9 +25,13 @@ export default function HistoryScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      if (!isPro) {
+        router.replace({ pathname: '/paywall', params: { openedFrom: 'history' } });
+        return;
+      }
       categoriesLoad();
       historyLoad();
-    }, [categoriesLoad, historyLoad]),
+    }, [isPro, categoriesLoad, historyLoad]),
   );
 
   const items = useMemo(() => {
@@ -38,6 +44,8 @@ export default function HistoryScreen() {
     (events.length === 0
       ? 'まだ履歴がありません'
       : 'このカテゴリの履歴はありません');
+
+  if (!isPro) return null;
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>

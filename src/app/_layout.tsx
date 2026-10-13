@@ -19,8 +19,15 @@ import { db } from '@/db/client';
 import migrations from '@/db/migrations/migrations';
 import { ensureDefaultCategory } from '@/features/categories/repository';
 import { useSettingsStore } from '@/features/settings/store';
+import { useHideDevToolsFabOnModals } from '@/lib/devToolsFab';
+import { hydrateCachedEntitlement, initPurchases } from '@/lib/purchases';
 
 SplashScreen.preventAutoHideAsync();
+
+function DevToolsFabGate() {
+  useHideDevToolsFabOnModals();
+  return null;
+}
 
 function navigationTheme(scheme: ColorScheme): Theme {
   const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
@@ -54,7 +61,11 @@ export default function RootLayout() {
   useEffect(() => {
     if (!migration.success) return;
     Promise.all([ensureDefaultCategory(), useSettingsStore.getState().load()])
-      .then(() => setSeeded(true))
+      .then(() => {
+        hydrateCachedEntitlement();
+        setSeeded(true);
+        void initPurchases();
+      })
       .catch((e: unknown) => setSeedError(e instanceof Error ? e : new Error(String(e))));
   }, [migration.success]);
 
@@ -81,6 +92,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={navigationTheme(scheme)}>
+        <DevToolsFabGate />
         <Stack>
           {/* 編集シート：透明なモーダルの上に @gorhom/bottom-sheet を出す */}
           <Stack.Screen
@@ -92,6 +104,7 @@ export default function RootLayout() {
               contentStyle: { backgroundColor: 'transparent' },
             }}
           />
+          <Stack.Screen name="paywall" options={{ presentation: 'modal', headerShown: false }} />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

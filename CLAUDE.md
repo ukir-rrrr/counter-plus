@@ -17,6 +17,7 @@
 | `docs/design/screens.md` | 各画面の仕様とデザイントークン |
 | `docs/design/mockups/` | 各画面のHTMLモックアップ。画面を作るときは対応するファイルを見て、見た目を合わせる（`_archive/` は使わない） |
 | `docs/implementation-plan.md` | 実装の順番とチェックリスト |
+| `docs/revenuecat-setup.md` | RevenueCat / App Store Connect のオーナー作業 |
 
 `docs/private/`（Git管理外・公開リポジトリには無い）に事業資料がある場合は参照してよい。
 ただし、その内容（価格の根拠、収益目標、競合の名前や分析）をコード・コメント・コミットメッセージ・公開ドキュメントに書かない。

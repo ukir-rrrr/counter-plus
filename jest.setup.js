@@ -56,7 +56,64 @@ jest.mock('expo-web-browser', () => ({
 
 jest.mock('expo-constants', () => ({
   __esModule: true,
-  default: { expoConfig: { version: '1.0.0' } },
+  default: {
+    expoConfig: { version: '1.0.0' },
+    executionEnvironment: 'bare',
+    appOwnership: null,
+  },
+}));
+
+jest.mock('expo-router', () => ({
+  router: {
+    push: jest.fn(),
+    replace: jest.fn(),
+    back: jest.fn(),
+    canGoBack: jest.fn(() => true),
+  },
+  Stack: { Screen: () => null },
+  useLocalSearchParams: () => ({}),
+  useNavigation: () => ({
+    canGoBack: () => true,
+    goBack: jest.fn(),
+    addListener: () => () => {},
+  }),
+  useFocusEffect: (cb) => {
+    const React = require('react');
+    React.useEffect(cb, [cb]);
+  },
+  usePathname: () => '/',
+  useSegments: () => [],
+}));
+
+jest.mock('expo-dev-client', () => ({
+  setToolsButtonVisible: jest.fn(),
+}));
+
+jest.mock('expo-modules-core', () => {
+  const actual = jest.requireActual('expo-modules-core');
+  return {
+    ...actual,
+    requireOptionalNativeModule: jest.fn((name) =>
+      typeof actual.requireOptionalNativeModule === 'function'
+        ? actual.requireOptionalNativeModule(name)
+        : null,
+    ),
+  };
+});
+
+jest.mock('react-native-purchases', () => ({
+  __esModule: true,
+  default: {
+    configure: jest.fn(),
+    setLogLevel: jest.fn(),
+    getCustomerInfo: jest.fn(),
+    getOfferings: jest.fn(),
+    purchasePackage: jest.fn(),
+    restorePurchases: jest.fn(),
+    addCustomerInfoUpdateListener: jest.fn(),
+  },
+  LOG_LEVEL: { DEBUG: 'DEBUG', VERBOSE: 'VERBOSE', INFO: 'INFO' },
+  PURCHASES_ERROR_CODE: { PURCHASE_CANCELLED_ERROR: '1' },
 }));
 
 // drizzle-orm/expo-sqlite をモック

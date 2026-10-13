@@ -1,4 +1,4 @@
-import { parseBooleanSetting, serializeBooleanSetting } from '../boolean';
+import { parseBooleanSetting, parseOptionalBooleanSetting, serializeBooleanSetting } from '../boolean';
 
 describe('parseBooleanSetting', () => {
   it('通常：true / false をそのまま返す', () => {
@@ -17,6 +17,24 @@ describe('parseBooleanSetting', () => {
     expect(parseBooleanSetting('yes', true)).toBe(true);
     expect(parseBooleanSetting('TRUE', false)).toBe(false);
     expect(parseBooleanSetting('1', true)).toBe(true);
+  });
+});
+
+describe('parseOptionalBooleanSetting', () => {
+  it('通常：true / false をそのまま返す', () => {
+    expect(parseOptionalBooleanSetting('true')).toBe(true);
+    expect(parseOptionalBooleanSetting('false')).toBe(false);
+  });
+
+  it('空データ：行なし・空文字は未キャッシュ', () => {
+    expect(parseOptionalBooleanSetting(undefined)).toBeNull();
+    expect(parseOptionalBooleanSetting(null)).toBeNull();
+    expect(parseOptionalBooleanSetting('')).toBeNull();
+  });
+
+  it('不正な値は未キャッシュ', () => {
+    expect(parseOptionalBooleanSetting('yes')).toBeNull();
+    expect(parseOptionalBooleanSetting('TRUE')).toBeNull();
   });
 });
 
