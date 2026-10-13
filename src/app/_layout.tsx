@@ -20,7 +20,7 @@ import migrations from '@/db/migrations/migrations';
 import { ensureDefaultCategory } from '@/features/categories/repository';
 import { useSettingsStore } from '@/features/settings/store';
 import { useHideDevToolsFabOnModals } from '@/lib/devToolsFab';
-import { initPurchases } from '@/lib/purchases';
+import { hydrateCachedEntitlement, initPurchases } from '@/lib/purchases';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -61,14 +61,13 @@ export default function RootLayout() {
   useEffect(() => {
     if (!migration.success) return;
     Promise.all([ensureDefaultCategory(), useSettingsStore.getState().load()])
-      .then(() => setSeeded(true))
+      .then(() => {
+        hydrateCachedEntitlement();
+        setSeeded(true);
+        void initPurchases();
+      })
       .catch((e: unknown) => setSeedError(e instanceof Error ? e : new Error(String(e))));
   }, [migration.success]);
-
-  // 課金の初期化は起動を止めない。Expo Go やキー未設定でも落ちない
-  useEffect(() => {
-    void initPurchases();
-  }, []);
 
   const error = migration.error ?? fontError ?? seedError;
   const ready = (fontsLoaded && seeded) || error != null;

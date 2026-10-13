@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { AppState, Platform, type AppStateStatus, type NativeEventSubscription } from 'react-native';
 import { create } from 'zustand';
 
 /** RevenueCat の Entitlement 識別子。ダッシュボード側と揃える */
@@ -10,6 +10,7 @@ export const PRO_PRODUCT_ID = 'pro_lifetime';
 export const FREE_CATEGORY_LIMIT = 1;
 
 export const DEV_BUILD_ONLY_MESSAGE = '開発ビルドでのみ利用できます';
+export const PURCHASE_NOT_CONFIGURED_MESSAGE = '購入の設定が完了していません';
 export const NO_OFFERINGS_MESSAGE = '購入できる商品が見つかりませんでした';
 export const PURCHASE_FAILED_MESSAGE = '購入できませんでした。もう一度試してください。';
 export const RESTORE_FAILED_MESSAGE = '購入を復元できませんでした。もう一度試してください。';
@@ -62,6 +63,11 @@ export type PurchasesClient = {
   addCustomerInfoUpdateListener?: (listener: (info: CustomerInfoLike) => void) => void;
 };
 
+export type EntitlementCache = {
+  read: () => boolean | null;
+  write: (isPro: boolean) => void;
+};
+
 type PurchasesState = {
   isPro: boolean;
   ready: boolean;
@@ -91,6 +97,48 @@ let injectedClient: PurchasesClient | null = null;
 let availabilityOverride: PurchasesAvailability | null = null;
 let configured = false;
 let customerInfoListener: ((info: CustomerInfoLike) => void) | null = null;
+let lastRefreshFailed = false;
+let initPromise: Promise<void> | null = null;
+let refreshInFlight: Promise<void> | null = null;
+let gateInFlight: Promise<boolean> | null = null;
+let appStateSub: NativeEventSubscription | null = null;
+let memoryCache: boolean | null = null;
+
+function defaultEntitlementCache(): EntitlementCache {
+  return {
+    read: () => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        return require('@/features/purchases/entitlementCache').readCachedIsPro() as boolean | null;
+      } catch {
+        return null;
+      }
+    },
+    write: (isPro) => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        require('@/features/purchases/entitlementCache').writeCachedIsPro(isPro);
+      } catch {
+        // 起動直後のDB未準備でも止めない
+      }
+    },
+  };
+}
+
+function memoryEntitlementCache(): EntitlementCache {
+  return {
+    read: () => memoryCache,
+    write: (isPro) => {
+      memoryCache = isPro;
+    },
+  };
+}
+
+let entitlementCache: EntitlementCache = defaultEntitlementCache();
+
+export function messageForUnavailable(reason: UnavailableReason | null | undefined): string {
+  return reason === 'no_key' ? PURCHASE_NOT_CONFIGURED_MESSAGE : DEV_BUILD_ONLY_MESSAGE;
+}
 
 function isNativeStorePlatform(os: string = Platform.OS): boolean {
   return os === 'ios' || os === 'android';
@@ -213,10 +261,31 @@ export function isPurchaseCancelled(error: unknown): boolean {
   return String(err.code) === '1' || String(err.code) === 'PURCHASE_CANCELLED_ERROR';
 }
 
+function persistIsPro(isPro: boolean): void {
+  usePurchasesStore.setState({ isPro });
+  try {
+    entitlementCache.write(isPro);
+  } catch (e) {
+    console.warn('Pro状態を保存できませんでした', e);
+  }
+}
+
+/** DB準備後に呼び、ネットワーク前から最後に分かっている Pro を使う */
+export function hydrateCachedEntitlement(): void {
+  try {
+    const cached = entitlementCache.read();
+    if (cached != null) {
+      usePurchasesStore.setState({ isPro: cached });
+    }
+  } catch (e) {
+    console.warn('Pro状態のキャッシュを読めませんでした', e);
+  }
+}
+
 function applyUnavailable(reason: UnavailableReason): void {
   selectedPackage = null;
+  hydrateCachedEntitlement();
   usePurchasesStore.setState({
-    isPro: false,
     ready: true,
     available: false,
     unavailableReason: reason,
@@ -228,12 +297,83 @@ function applyUnavailable(reason: UnavailableReason): void {
 }
 
 function applyCustomerInfo(info: CustomerInfoLike | null | undefined): void {
-  usePurchasesStore.setState({ isPro: isProFromCustomerInfo(info) });
+  persistIsPro(isProFromCustomerInfo(info));
 }
 
-/** 起動時に1回呼ぶ。失敗してもアプリは止めない */
-export async function initPurchases(): Promise<void> {
+async function fetchCustomerInfo(client: PurchasesClient): Promise<CustomerInfoLike | null> {
   try {
+    const info = await client.getCustomerInfo();
+    lastRefreshFailed = false;
+    return info;
+  } catch (e) {
+    console.warn('購入状態を取得できませんでした', e);
+    lastRefreshFailed = true;
+    return null;
+  }
+}
+
+function applyOfferings(offerings: OfferingsLike | null): void {
+  selectedPackage = selectProPackage(offerings);
+  const offeringsError =
+    offerings == null ? OFFERINGS_LOAD_FAILED_MESSAGE : selectedPackage == null ? NO_OFFERINGS_MESSAGE : null;
+  usePurchasesStore.setState({
+    priceString: selectedPackage?.product.priceString ?? null,
+    offeringsEmpty: selectedPackage == null,
+    offeringsError,
+  });
+}
+
+async function configureClient(client: PurchasesClient): Promise<boolean> {
+  const apiKey = getApiKey();
+  if (!apiKey || configured) return true;
+  try {
+    await client.setLogLevel?.('INFO');
+    client.configure({ apiKey });
+    configured = true;
+    customerInfoListener = (info) => applyCustomerInfo(info);
+    client.addCustomerInfoUpdateListener?.(customerInfoListener);
+    return true;
+  } catch (e) {
+    console.warn('RevenueCat の初期化に失敗しました', e);
+    applyUnavailable('no_native');
+    return false;
+  }
+}
+
+async function syncFromStore(client: PurchasesClient): Promise<void> {
+  const [info, offerings] = await Promise.all([
+    fetchCustomerInfo(client),
+    client.getOfferings().catch((e: unknown) => {
+      console.warn('購入情報を取得できませんでした', e);
+      return null;
+    }),
+  ]);
+
+  if (info != null) {
+    persistIsPro(isProFromCustomerInfo(info));
+  }
+
+  applyOfferings(offerings);
+  usePurchasesStore.setState({
+    ready: true,
+    available: true,
+    unavailableReason: null,
+    purchaseInFlight: false,
+  });
+}
+
+function subscribeForegroundRefresh(): void {
+  if (appStateSub) return;
+  appStateSub = AppState.addEventListener('change', (state: AppStateStatus) => {
+    if (state === 'active') void refreshPurchases();
+  });
+}
+
+async function runInitPurchases(): Promise<void> {
+  try {
+    hydrateCachedEntitlement();
+    subscribeForegroundRefresh();
+
     const availability = inspectPurchasesAvailability();
     if (!availability.available) {
       applyUnavailable(availability.reason);
@@ -246,54 +386,53 @@ export async function initPurchases(): Promise<void> {
       return;
     }
 
-    const apiKey = getApiKey();
-    if (apiKey && !configured) {
-      try {
-        await client.setLogLevel?.('INFO');
-        client.configure({ apiKey });
-        configured = true;
-        customerInfoListener = (info) => applyCustomerInfo(info);
-        client.addCustomerInfoUpdateListener?.(customerInfoListener);
-      } catch (e) {
-        console.warn('RevenueCat の初期化に失敗しました', e);
-        applyUnavailable('no_native');
-        return;
-      }
-    }
-
-    const [info, offerings] = await Promise.all([
-      client.getCustomerInfo().catch((e: unknown) => {
-        console.warn('購入状態を取得できませんでした', e);
-        return null;
-      }),
-      client.getOfferings().catch((e: unknown) => {
-        console.warn('購入情報を取得できませんでした', e);
-        return null;
-      }),
-    ]);
-
-    selectedPackage = selectProPackage(offerings);
-    const offeringsError =
-      offerings == null ? OFFERINGS_LOAD_FAILED_MESSAGE : selectedPackage == null ? NO_OFFERINGS_MESSAGE : null;
-
-    usePurchasesStore.setState({
-      isPro: isProFromCustomerInfo(info),
-      ready: true,
-      available: true,
-      unavailableReason: null,
-      priceString: selectedPackage?.product.priceString ?? null,
-      offeringsEmpty: selectedPackage == null,
-      offeringsError,
-      purchaseInFlight: false,
-    });
+    if (!(await configureClient(client))) return;
+    await syncFromStore(client);
   } catch (e) {
     console.warn('課金の初期化に失敗しました', e);
     applyUnavailable('no_native');
   }
 }
 
-function unavailableResult(): PurchaseResult {
-  return { ok: false, reason: 'unavailable', message: DEV_BUILD_ONLY_MESSAGE };
+/** 起動時に1回呼ぶ。失敗してもアプリは止めない */
+export async function initPurchases(): Promise<void> {
+  if (initPromise) return initPromise;
+  initPromise = runInitPurchases();
+  return initPromise;
+}
+
+/** フォアグラウンド復帰や制限操作の直前に、購入状態を取り直す */
+export async function refreshPurchases(): Promise<void> {
+  if (initPromise && !usePurchasesStore.getState().ready) return initPromise;
+  if (refreshInFlight) return refreshInFlight;
+
+  refreshInFlight = (async () => {
+    try {
+      const availability = inspectPurchasesAvailability();
+      if (!availability.available) {
+        applyUnavailable(availability.reason);
+        return;
+      }
+      const client = getClient();
+      if (!client) {
+        applyUnavailable('no_native');
+        return;
+      }
+      if (!(await configureClient(client))) return;
+      await syncFromStore(client);
+    } catch (e) {
+      console.warn('購入状態の再取得に失敗しました', e);
+      lastRefreshFailed = true;
+    }
+  })().finally(() => {
+    refreshInFlight = null;
+  });
+
+  return refreshInFlight;
+}
+
+function unavailableResult(reason: UnavailableReason | null | undefined): PurchaseResult {
+  return { ok: false, reason: 'unavailable', message: messageForUnavailable(reason) };
 }
 
 export async function purchasePro(): Promise<PurchaseResult> {
@@ -302,10 +441,10 @@ export async function purchasePro(): Promise<PurchaseResult> {
   }
 
   const availability = inspectPurchasesAvailability();
-  if (!availability.available) return unavailableResult();
+  if (!availability.available) return unavailableResult(availability.reason);
 
   const client = getClient();
-  if (!client) return unavailableResult();
+  if (!client) return unavailableResult('no_native');
   if (!selectedPackage) {
     return { ok: false, reason: 'empty', message: NO_OFFERINGS_MESSAGE };
   }
@@ -313,9 +452,9 @@ export async function purchasePro(): Promise<PurchaseResult> {
   usePurchasesStore.setState({ purchaseInFlight: true });
   try {
     const result = await client.purchasePackage(selectedPackage);
-    const isPro = isProFromCustomerInfo(result.customerInfo);
-    usePurchasesStore.setState({ isPro, purchaseInFlight: false });
-    return { ok: true, isPro };
+    persistIsPro(isProFromCustomerInfo(result.customerInfo));
+    usePurchasesStore.setState({ purchaseInFlight: false });
+    return { ok: true, isPro: usePurchasesStore.getState().isPro };
   } catch (e) {
     usePurchasesStore.setState({ purchaseInFlight: false });
     if (isPurchaseCancelled(e)) {
@@ -332,17 +471,17 @@ export async function restorePurchases(): Promise<PurchaseResult> {
   }
 
   const availability = inspectPurchasesAvailability();
-  if (!availability.available) return unavailableResult();
+  if (!availability.available) return unavailableResult(availability.reason);
 
   const client = getClient();
-  if (!client) return unavailableResult();
+  if (!client) return unavailableResult('no_native');
 
   usePurchasesStore.setState({ purchaseInFlight: true });
   try {
     const info = await client.restorePurchases();
-    const isPro = isProFromCustomerInfo(info);
-    usePurchasesStore.setState({ isPro, purchaseInFlight: false });
-    return { ok: true, isPro };
+    persistIsPro(isProFromCustomerInfo(info));
+    usePurchasesStore.setState({ purchaseInFlight: false });
+    return { ok: true, isPro: usePurchasesStore.getState().isPro };
   } catch (e) {
     usePurchasesStore.setState({ purchaseInFlight: false });
     if (isPurchaseCancelled(e)) {
@@ -368,10 +507,34 @@ export function openPaywall(openedFrom: PaywallOpenedFrom = 'settings'): void {
   getRouter().push({ pathname: '/paywall', params: { openedFrom } });
 }
 
-export function requireProOrOpenPaywall(openedFrom: PaywallOpenedFrom): boolean {
-  if (usePurchasesStore.getState().isPro) return true;
+async function resolveProOrOpenPaywall(openedFrom: PaywallOpenedFrom): Promise<boolean> {
+  if (usePurchasesStore.getState().isPro) {
+    if (lastRefreshFailed) void refreshPurchases();
+    return true;
+  }
+
+  if (!usePurchasesStore.getState().ready) {
+    await initPurchases();
+    if (usePurchasesStore.getState().isPro) return true;
+  } else if (lastRefreshFailed) {
+    await refreshPurchases();
+    if (usePurchasesStore.getState().isPro) return true;
+  }
+
   openPaywall(openedFrom);
   return false;
+}
+
+/** 未準備ならキャッシュ／初期化完了を待ってから判定する。連打では購入画面を1回だけ開く */
+export async function requireProOrOpenPaywall(openedFrom: PaywallOpenedFrom): Promise<boolean> {
+  if (gateInFlight) {
+    await gateInFlight;
+    return usePurchasesStore.getState().isPro;
+  }
+  gateInFlight = resolveProOrOpenPaywall(openedFrom).finally(() => {
+    gateInFlight = null;
+  });
+  return gateInFlight;
 }
 
 export function destinationAfterPurchase(openedFrom: PaywallOpenedFrom): '/history' | '/export' | null {
@@ -390,6 +553,16 @@ export function setPurchasesAvailabilityForTests(value: PurchasesAvailability | 
   availabilityOverride = value;
 }
 
+/** テスト用。entitlement キャッシュを差し替える */
+export function setEntitlementCacheForTests(cache: EntitlementCache | null): void {
+  entitlementCache = cache ?? memoryEntitlementCache();
+}
+
+/** テスト用。フォアグラウンド復帰を再現する */
+export function notifyPurchasesAppStateForTests(state: AppStateStatus): void {
+  if (state === 'active') void refreshPurchases();
+}
+
 /** テスト用。状態とロックを初期化する */
 export function resetPurchasesForTests(): void {
   injectedClient = null;
@@ -397,5 +570,13 @@ export function resetPurchasesForTests(): void {
   selectedPackage = null;
   configured = false;
   customerInfoListener = null;
+  lastRefreshFailed = false;
+  initPromise = null;
+  refreshInFlight = null;
+  gateInFlight = null;
+  memoryCache = null;
+  entitlementCache = memoryEntitlementCache();
+  appStateSub?.remove();
+  appStateSub = null;
   usePurchasesStore.setState({ ...initialState });
 }

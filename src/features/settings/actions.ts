@@ -3,7 +3,7 @@ import * as WebBrowser from 'expo-web-browser';
 
 import { restorePurchases as restorePurchasesSdk } from '@/lib/purchases';
 
-export type SettingsActionReason = 'busy' | 'unavailable' | 'error';
+export type SettingsActionReason = 'busy' | 'cancelled' | 'unavailable' | 'error';
 
 export type SettingsActionResult =
   | { ok: true; isPro?: boolean }
@@ -41,7 +41,9 @@ type RestoreImpl = () => Promise<SettingsActionResult>;
 const defaultRestoreImpl: RestoreImpl = async () => {
   const result = await restorePurchasesSdk();
   if (result.ok) return { ok: true, isPro: result.isPro };
-  if (result.reason === 'busy') return { ok: false, reason: 'busy' };
+  if (result.reason === 'busy' || result.reason === 'cancelled') {
+    return { ok: false, reason: result.reason };
+  }
   if (result.reason === 'unavailable') {
     return { ok: false, reason: 'unavailable', message: result.message ?? RESTORE_UNAVAILABLE_MESSAGE };
   }

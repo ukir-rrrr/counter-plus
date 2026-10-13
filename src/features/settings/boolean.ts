@@ -10,3 +10,11 @@ export function parseBooleanSetting(value: string | null | undefined, defaultVal
 export function serializeBooleanSetting(value: boolean): string {
   return value ? 'true' : 'false';
 }
+
+/** 行が無い・空・不正は「未キャッシュ」 */
+export function parseOptionalBooleanSetting(value: string | null | undefined): boolean | null {
+  if (value == null || value === '') return null;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return null;
+}

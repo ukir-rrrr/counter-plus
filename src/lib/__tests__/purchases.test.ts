@@ -10,18 +10,23 @@ import {
   inspectPurchasesAvailability,
   isProFromCustomerInfo,
   isPurchaseCancelled,
+  messageForUnavailable,
   NO_OFFERINGS_MESSAGE,
+  notifyPurchasesAppStateForTests,
   openPaywall,
   parseOpenedFrom,
   PRO_ENTITLEMENT_ID,
   PRO_PRODUCT_ID,
   PURCHASE_FAILED_MESSAGE,
+  PURCHASE_NOT_CONFIGURED_MESSAGE,
   purchasePro,
+  refreshPurchases,
   requireProOrOpenPaywall,
   resetPurchasesForTests,
   RESTORE_FAILED_MESSAGE,
   restorePurchases,
   selectProPackage,
+  setEntitlementCacheForTests,
   setPurchasesAvailabilityForTests,
   setPurchasesClientForTests,
   usePurchasesStore,
@@ -128,6 +133,7 @@ describe('purchases 純粋ロジック', () => {
 describe('purchases ストア', () => {
   beforeEach(() => {
     resetPurchasesForTests();
+    (router.push as jest.Mock).mockClear();
     jest.spyOn(console, 'warn').mockImplementation(() => {});
   });
 
@@ -236,7 +242,7 @@ describe('purchases ストア', () => {
     expect(usePurchasesStore.getState().purchaseInFlight).toBe(false);
   });
 
-  it('未導入・キーなしでは購入も復元も unavailable', async () => {
+  it('未導入では購入も復元も開発ビルドの案内', async () => {
     await initPurchases();
     expect(inspectPurchasesAvailability().available).toBe(false);
 
@@ -252,6 +258,34 @@ describe('purchases ストア', () => {
     });
     expect(usePurchasesStore.getState().isPro).toBe(false);
     expect(usePurchasesStore.getState().ready).toBe(true);
+  });
+
+  it('キー未設定は別の案内にする', async () => {
+    setPurchasesAvailabilityForTests({ available: false, reason: 'no_key' });
+    await initPurchases();
+
+    expect(messageForUnavailable('no_key')).toBe(PURCHASE_NOT_CONFIGURED_MESSAGE);
+    await expect(purchasePro()).resolves.toEqual({
+      ok: false,
+      reason: 'unavailable',
+      message: PURCHASE_NOT_CONFIGURED_MESSAGE,
+    });
+    await expect(restorePurchases()).resolves.toEqual({
+      ok: false,
+      reason: 'unavailable',
+      message: PURCHASE_NOT_CONFIGURED_MESSAGE,
+    });
+  });
+
+  it('利用不可の連打でも同じ案内で、状態は壊れない', async () => {
+    setPurchasesAvailabilityForTests({ available: false, reason: 'no_key' });
+    const extras = await Promise.all([purchasePro(), purchasePro(), restorePurchases()]);
+    expect(extras.every((r) => r.ok === false && r.reason === 'unavailable')).toBe(true);
+    expect(extras[0]).toEqual({
+      ok: false,
+      reason: 'unavailable',
+      message: PURCHASE_NOT_CONFIGURED_MESSAGE,
+    });
   });
 
   it('通常：復元で Pro になる / 購入が無い', async () => {
@@ -307,16 +341,135 @@ describe('purchases ストア', () => {
     expect(usePurchasesStore.getState().isPro).toBe(false);
   });
 
-  it('未購入なら購入画面を開き、Proなら開かない', () => {
-    expect(requireProOrOpenPaywall('history')).toBe(false);
+  it('未購入なら購入画面を開き、Proなら開かない', async () => {
+    usePurchasesStore.setState({ ready: true, isPro: false });
+    await expect(requireProOrOpenPaywall('history')).resolves.toBe(false);
     expect(router.push).toHaveBeenCalledWith({ pathname: '/paywall', params: { openedFrom: 'history' } });
 
     (router.push as jest.Mock).mockClear();
     usePurchasesStore.setState({ isPro: true });
-    expect(requireProOrOpenPaywall('history')).toBe(true);
+    await expect(requireProOrOpenPaywall('history')).resolves.toBe(true);
     expect(router.push).not.toHaveBeenCalled();
 
     openPaywall('csv');
     expect(router.push).toHaveBeenCalledWith({ pathname: '/paywall', params: { openedFrom: 'csv' } });
+  });
+
+  it('getCustomerInfo が失敗しても最後の Pro を落とさない', async () => {
+    const writes: boolean[] = [];
+    setEntitlementCacheForTests({
+      read: () => true,
+      write: (value) => writes.push(value),
+    });
+    const client = mockClient({
+      getCustomerInfo: jest.fn(async () => {
+        throw new Error('offline');
+      }),
+    });
+    setPurchasesClientForTests(client);
+    setPurchasesAvailabilityForTests({ available: true });
+
+    await initPurchases();
+
+    expect(usePurchasesStore.getState().isPro).toBe(true);
+    expect(usePurchasesStore.getState().ready).toBe(true);
+    expect(writes).toEqual([]);
+  });
+
+  it('通常：取得成功で Pro をキャッシュする', async () => {
+    const writes: boolean[] = [];
+    setEntitlementCacheForTests({
+      read: () => null,
+      write: (value) => writes.push(value),
+    });
+    const client = mockClient({
+      getCustomerInfo: jest.fn(async () => proInfo(true)),
+    });
+    setPurchasesClientForTests(client);
+    setPurchasesAvailabilityForTests({ available: true });
+
+    await initPurchases();
+    expect(usePurchasesStore.getState().isPro).toBe(true);
+    expect(writes).toEqual([true]);
+  });
+
+  it('フォアグラウンド復帰で購入状態を再取得する', async () => {
+    setEntitlementCacheForTests({
+      read: () => true,
+      write: () => {},
+    });
+    const getCustomerInfo = jest
+      .fn()
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce(proInfo(true));
+    const client = mockClient({ getCustomerInfo });
+    setPurchasesClientForTests(client);
+    setPurchasesAvailabilityForTests({ available: true });
+
+    await initPurchases();
+    expect(usePurchasesStore.getState().isPro).toBe(true);
+
+    notifyPurchasesAppStateForTests('active');
+    await refreshPurchases();
+    expect(getCustomerInfo).toHaveBeenCalledTimes(2);
+  });
+
+  it('制限操作の直前に失敗した取得を再試行する', async () => {
+    const getCustomerInfo = jest
+      .fn()
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce(proInfo(true));
+    const client = mockClient({ getCustomerInfo });
+    setPurchasesClientForTests(client);
+    setPurchasesAvailabilityForTests({ available: true });
+
+    await initPurchases();
+    expect(usePurchasesStore.getState().isPro).toBe(false);
+
+    await expect(requireProOrOpenPaywall('sort')).resolves.toBe(true);
+    expect(getCustomerInfo).toHaveBeenCalledTimes(2);
+    expect(router.push).not.toHaveBeenCalled();
+  });
+
+  it('未準備の Pro キャッシュでは購入画面を開かない', async () => {
+    setEntitlementCacheForTests({
+      read: () => true,
+      write: () => {},
+    });
+    const gate = deferred<CustomerInfoLike>();
+    const client = mockClient({
+      getCustomerInfo: jest.fn(() => gate.promise),
+    });
+    setPurchasesClientForTests(client);
+    setPurchasesAvailabilityForTests({ available: true });
+
+    const init = initPurchases();
+    await expect(requireProOrOpenPaywall('csv')).resolves.toBe(true);
+    expect(router.push).not.toHaveBeenCalled();
+
+    gate.resolve(proInfo(true));
+    await init;
+  });
+
+  it('未準備でキャッシュが無いときは初期化を待ってから購入画面を開く', async () => {
+    const gate = deferred<CustomerInfoLike>();
+    const client = mockClient({
+      getCustomerInfo: jest.fn(() => gate.promise),
+    });
+    setPurchasesClientForTests(client);
+    setPurchasesAvailabilityForTests({ available: true });
+
+    const init = initPurchases();
+    const first = requireProOrOpenPaywall('history');
+    const extra1 = requireProOrOpenPaywall('history');
+    const extra2 = requireProOrOpenPaywall('csv');
+    expect(router.push).not.toHaveBeenCalled();
+
+    gate.resolve(proInfo(false));
+    await init;
+    await expect(first).resolves.toBe(false);
+    await expect(Promise.all([extra1, extra2])).resolves.toEqual([false, false]);
+    expect(router.push).toHaveBeenCalledTimes(1);
+    expect(router.push).toHaveBeenCalledWith({ pathname: '/paywall', params: { openedFrom: 'history' } });
   });
 });

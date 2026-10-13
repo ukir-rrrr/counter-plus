@@ -16,36 +16,37 @@ export function Toolbar() {
   const load = useCountersStore((s) => s.load);
 
   const handleSort = () => {
-    if (!requireProOrOpenPaywall('sort')) return;
-    if (!categoryId) return;
+    void requireProOrOpenPaywall('sort').then((ok) => {
+      if (!ok || !categoryId) return;
 
-    Alert.alert('並べ替え', '項目の並び順を選んでください', [
-      {
-        text: '名前順',
-        onPress: async () => {
-          autoSortCounters(categoryId, 'name');
-          await load(categoryId);
-          tapHaptic();
+      Alert.alert('並べ替え', '項目の並び順を選んでください', [
+        {
+          text: '名前順',
+          onPress: async () => {
+            autoSortCounters(categoryId, 'name');
+            await load(categoryId);
+            tapHaptic();
+          },
         },
-      },
-      {
-        text: '数の多い順',
-        onPress: async () => {
-          autoSortCounters(categoryId, 'most');
-          await load(categoryId);
-          tapHaptic();
+        {
+          text: '数の多い順',
+          onPress: async () => {
+            autoSortCounters(categoryId, 'most');
+            await load(categoryId);
+            tapHaptic();
+          },
         },
-      },
-      {
-        text: '数の少ない順',
-        onPress: async () => {
-          autoSortCounters(categoryId, 'least');
-          await load(categoryId);
-          tapHaptic();
+        {
+          text: '数の少ない順',
+          onPress: async () => {
+            autoSortCounters(categoryId, 'least');
+            await load(categoryId);
+            tapHaptic();
+          },
         },
-      },
-      { text: 'キャンセル', style: 'cancel' },
-    ]);
+        { text: 'キャンセル', style: 'cancel' },
+      ]);
+    });
   };
 
   return (
@@ -55,8 +56,10 @@ export function Toolbar() {
         accessibilityRole="button"
         accessibilityLabel={isPro ? '履歴' : '履歴（Pro）'}
         onPress={() => {
-          if (!requireProOrOpenPaywall('history')) return;
-          router.push('/history');
+          void requireProOrOpenPaywall('history').then((ok) => {
+            if (!ok) return;
+            router.push('/history');
+          });
         }}
         className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-control border border-border bg-surface active:opacity-70">
         <ClockIcon color={c.ink} />
@@ -68,8 +71,10 @@ export function Toolbar() {
         accessibilityRole="button"
         accessibilityLabel={isPro ? 'CSV出力' : 'CSV出力（Pro）'}
         onPress={() => {
-          if (!requireProOrOpenPaywall('csv')) return;
-          router.push('/export');
+          void requireProOrOpenPaywall('csv').then((ok) => {
+            if (!ok) return;
+            router.push('/export');
+          });
         }}
         className="h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-control border border-border bg-surface active:opacity-70">
         <DownloadIcon color={c.ink} />

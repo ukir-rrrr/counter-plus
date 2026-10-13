@@ -21,7 +21,7 @@ import {
 import { useCountersStore } from '@/features/counters/store';
 import { ProBadge } from '@/features/purchases/components/ProBadge';
 import { tapHaptic } from '@/lib/haptics';
-import { canAddCategory, openPaywall, useIsPro } from '@/lib/purchases';
+import { canAddCategory, requireProOrOpenPaywall, useIsPro } from '@/lib/purchases';
 
 function Header({ isEditing, onToggleEdit }: { isEditing: boolean; onToggleEdit: () => void }) {
   const c = useThemeColors();
@@ -158,11 +158,13 @@ export default function CategoriesScreen() {
   const addFallbackName = defaultCategoryName(categories.length);
 
   const handleAdd = () => {
-    if (!canAddCategory(isPro, categories.length)) {
-      openPaywall('category');
+    if (canAddCategory(isPro, categories.length)) {
+      setAdding(true);
       return;
     }
-    setAdding(true);
+    void requireProOrOpenPaywall('category').then((ok) => {
+      if (ok) setAdding(true);
+    });
   };
 
   const handleAddSubmit = (input: string) => {

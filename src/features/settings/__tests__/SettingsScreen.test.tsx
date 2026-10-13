@@ -5,7 +5,7 @@ import SettingsScreen from '@/app/settings';
 
 import { resetPurchasesForTests, usePurchasesStore } from '@/lib/purchases';
 
-import { resetSettingsActionLocksForTests } from '../actions';
+import { resetSettingsActionLocksForTests, setRestorePurchasesImplForTests } from '../actions';
 import { resetSettingsWriteQueueForTests, useSettingsStore } from '../store';
 
 jest.mock('expo-router', () => ({
@@ -27,6 +27,7 @@ jest.mock('../components/SettingsHeader', () => ({
 describe('SettingsScreen', () => {
   beforeEach(() => {
     resetSettingsActionLocksForTests();
+    setRestorePurchasesImplForTests(null);
     resetSettingsWriteQueueForTests();
     resetPurchasesForTests();
     useSettingsStore.setState({
@@ -87,6 +88,16 @@ describe('SettingsScreen', () => {
       expect(Alert.alert).toHaveBeenCalledWith('準備中', 'この機能は準備中です。');
     });
 
+    await unmount();
+  });
+
+  it('復元キャンセルはアラートを出さない', async () => {
+    setRestorePurchasesImplForTests(async () => ({ ok: false, reason: 'cancelled' }));
+    const { getByTestId, unmount } = await render(<SettingsScreen />);
+    await act(async () => {
+      fireEvent.press(getByTestId('settings-restore'));
+    });
+    expect(Alert.alert).not.toHaveBeenCalled();
     await unmount();
   });
 

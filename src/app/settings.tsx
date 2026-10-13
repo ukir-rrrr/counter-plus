@@ -23,7 +23,7 @@ function showRestoreResult(result: SettingsActionResult): void {
     Alert.alert(result.isPro ? RESTORE_OK_MESSAGE : RESTORE_NONE_MESSAGE);
     return;
   }
-  if (result.reason === 'busy') return;
+  if (result.reason === 'busy' || result.reason === 'cancelled') return;
   Alert.alert('購入を復元できません', result.message ?? '開発ビルドでのみ利用できます');
 }
 

@@ -1,4 +1,12 @@
 import {
+  initPurchases,
+  resetPurchasesForTests,
+  setPurchasesAvailabilityForTests,
+  setPurchasesClientForTests,
+  type PurchasesClient,
+} from '@/lib/purchases';
+
+import {
   isRestoreInFlight,
   isSupportInFlight,
   openSupportLink,
@@ -28,10 +36,28 @@ function mockOpener(overrides: Partial<SupportOpener> = {}): SupportOpener {
   };
 }
 
+function mockPurchasesClient(overrides: Partial<PurchasesClient> = {}): PurchasesClient {
+  return {
+    configure: jest.fn(),
+    setLogLevel: jest.fn(),
+    getCustomerInfo: jest.fn(async () => ({ entitlements: { active: {} } })),
+    getOfferings: jest.fn(async () => ({ current: { lifetime: null, availablePackages: [] } })),
+    purchasePackage: jest.fn(async () => ({ customerInfo: { entitlements: { active: {} } } })),
+    restorePurchases: jest.fn(async () => ({ entitlements: { active: {} } })),
+    addCustomerInfoUpdateListener: jest.fn(),
+    ...overrides,
+  };
+}
+
 describe('restorePurchases', () => {
   beforeEach(() => {
     resetSettingsActionLocksForTests();
     setRestorePurchasesImplForTests(null);
+    resetPurchasesForTests();
+  });
+
+  afterEach(() => {
+    resetPurchasesForTests();
   });
 
   it('通常：ネイティブ未導入では unavailable を返す', async () => {
@@ -57,6 +83,21 @@ describe('restorePurchases', () => {
     });
     const result = await restorePurchases();
     expect(result).toMatchObject({ ok: false, reason: 'error', message: '購入を復元できませんでした' });
+  });
+
+  it('キャンセルは error にせず無音で返す', async () => {
+    setPurchasesAvailabilityForTests({ available: true });
+    setPurchasesClientForTests(
+      mockPurchasesClient({
+        restorePurchases: jest.fn(async () => {
+          throw { userCancelled: true, code: '1' };
+        }),
+      }),
+    );
+    await initPurchases();
+
+    const result = await restorePurchases();
+    expect(result).toEqual({ ok: false, reason: 'cancelled' });
   });
 
   it('連打しても復元は1回。2回目以降は busy', async () => {

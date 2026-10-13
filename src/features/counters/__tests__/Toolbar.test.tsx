@@ -1,4 +1,4 @@
-import { fireEvent, render } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 
 import { resetPurchasesForTests, usePurchasesStore } from '@/lib/purchases';
@@ -23,23 +23,33 @@ describe('Toolbar Pro gate', () => {
   });
 
   it('通常：未購入は購入画面、Proは機能へ', async () => {
-    usePurchasesStore.setState({ isPro: false });
+    usePurchasesStore.setState({ isPro: false, ready: true });
     const view = await render(<Toolbar />);
     fireEvent.press(view.getByTestId('toolbar-history'));
-    expect(router.push).toHaveBeenCalledWith({ pathname: '/paywall', params: { openedFrom: 'history' } });
+    await waitFor(() => {
+      expect(router.push).toHaveBeenCalledWith({ pathname: '/paywall', params: { openedFrom: 'history' } });
+    });
     (router.push as jest.Mock).mockClear();
     fireEvent.press(view.getByTestId('toolbar-export'));
-    expect(router.push).toHaveBeenCalledWith({ pathname: '/paywall', params: { openedFrom: 'csv' } });
+    await waitFor(() => {
+      expect(router.push).toHaveBeenCalledWith({ pathname: '/paywall', params: { openedFrom: 'csv' } });
+    });
     expect(view.getByTestId('toolbar-sort')).toBeTruthy();
 
     (router.push as jest.Mock).mockClear();
-    usePurchasesStore.setState({ isPro: true });
+    await act(async () => {
+      usePurchasesStore.setState({ isPro: true, ready: true });
+    });
     await view.rerender(<Toolbar />);
     fireEvent.press(view.getByTestId('toolbar-history'));
-    expect(router.push).toHaveBeenCalledWith('/history');
+    await waitFor(() => {
+      expect(router.push).toHaveBeenCalledWith('/history');
+    });
     (router.push as jest.Mock).mockClear();
     fireEvent.press(view.getByTestId('toolbar-export'));
-    expect(router.push).toHaveBeenCalledWith('/export');
+    await waitFor(() => {
+      expect(router.push).toHaveBeenCalledWith('/export');
+    });
     expect(view.queryByText('PRO')).toBeNull();
     await view.unmount();
   });

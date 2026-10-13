@@ -10,6 +10,7 @@ import { countHistoryEvents } from '@/features/history/repository';
 import {
   DEV_BUILD_ONLY_MESSAGE,
   destinationAfterPurchase,
+  messageForUnavailable,
   parseOpenedFrom,
   PRICE_UNAVAILABLE_MESSAGE,
   purchasePro,
@@ -55,6 +56,7 @@ export function PaywallView({ openedFrom: openedFromParam }: { openedFrom?: stri
   const openedFrom = parseOpenedFrom(openedFromParam);
   const isPro = useIsPro();
   const available = usePurchasesStore((s) => s.available);
+  const unavailableReason = usePurchasesStore((s) => s.unavailableReason);
   const priceString = usePurchasesStore((s) => s.priceString);
   const offeringsEmpty = usePurchasesStore((s) => s.offeringsEmpty);
   const offeringsError = usePurchasesStore((s) => s.offeringsError);
@@ -173,7 +175,7 @@ export function PaywallView({ openedFrom: openedFromParam }: { openedFrom?: stri
 
         {!available ? (
           <Text testID="paywall-unavailable" className="text-center font-sans text-label text-danger">
-            {DEV_BUILD_ONLY_MESSAGE}
+            {messageForUnavailable(unavailableReason)}
           </Text>
         ) : null}
         {available && offeringsError ? (
