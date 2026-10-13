@@ -113,7 +113,12 @@ export const useCountersStore = create<CountersState>((set, get) => {
   function step(id: string, delta: number): boolean {
     const counter = get().byId[id];
     if (!counter || delta === 0) return false;
-    return applyCount(id, counter.count + delta, delta > 0 ? 'increment' : 'decrement') !== null;
+    const changed = applyCount(id, counter.count + delta, delta > 0 ? 'increment' : 'decrement') !== null;
+    if (changed) {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('@/lib/analytics').noteCountTapped();
+    }
+    return changed;
   }
 
   return {
@@ -159,6 +164,8 @@ export const useCountersStore = create<CountersState>((set, get) => {
       if (!categoryId) return;
       const row = createCounter({ categoryId, name, color: colorKeys[ids.length % colorKeys.length] });
       set((s) => ({ ids: [...s.ids, row.id], byId: { ...s.byId, [row.id]: row } }));
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('@/lib/analytics').capture('counter_created');
     },
     update: (id, patch) => {
       const counter = get().byId[id];

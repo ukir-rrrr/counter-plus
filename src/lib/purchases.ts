@@ -504,6 +504,8 @@ function getRouter(): { push: (href: { pathname: string; params?: Record<string,
 }
 
 export function openPaywall(openedFrom: PaywallOpenedFrom = 'settings'): void {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require('@/lib/analytics').capture('pro_gate_shown', { from: openedFrom });
   getRouter().push({ pathname: '/paywall', params: { openedFrom } });
 }
 
