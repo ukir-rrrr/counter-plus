@@ -4,44 +4,114 @@ import { useSettingsStore } from '@/features/settings/store';
 
 import tapSoundSource from '../../assets/sounds/tap.wav';
 
-/** 連打でも前の再生と seek がぶつからないよう、短い音を複数プレイヤーで回す */
-export const TAP_SOUND_POOL_SIZE = 3;
+/** 同時に生きていてよいワンショットプレイヤーの上限 */
+export const TAP_SOUND_MAX_LIVE = 6;
+
+type AudioStatusLike = {
+  playing?: boolean;
+  didJustFinish?: boolean;
+  currentTime?: number;
+  playbackState?: string;
+  isLoaded?: boolean;
+};
+
+type EventSub = { remove: () => void };
 
 type TapPlayer = {
   play: () => void;
-  pause?: () => void;
-  seekTo: (seconds: number) => unknown;
+  replace?: (source: number) => void;
+  remove?: () => void;
+  currentStatus?: AudioStatusLike;
+  addListener?: (event: 'playbackStatusUpdate', cb: (status: AudioStatusLike) => void) => EventSub;
 };
 
 type SoundPlayerFn = () => void;
 
-let pool: TapPlayer[] = [];
-let nextIndex = 0;
+type LiveShot = {
+  seq: number;
+  player: TapPlayer;
+  release: () => void;
+};
+
+let live: LiveShot[] = [];
+let tapSeq = 0;
 let testPlayer: TapPlayer | SoundPlayerFn | null = null;
-let audioModeRequested = false;
+let audioModeReady: Promise<void> | null = null;
 
-function ensureAudioMode(): void {
-  if (audioModeRequested) return;
-  audioModeRequested = true;
-  setAudioModeAsync({
-    playsInSilentMode: true,
-    interruptionMode: 'mixWithOthers',
-  }).catch(() => {});
-}
-
-function getPool(): TapPlayer[] {
-  if (testPlayer && typeof testPlayer !== 'function') return [testPlayer];
-  if (pool.length === 0) {
-    pool = Array.from({ length: TAP_SOUND_POOL_SIZE }, () => createAudioPlayer(tapSoundSource));
-    ensureAudioMode();
+function ensureAudioMode(): Promise<void> {
+  if (!audioModeReady) {
+    audioModeReady = setAudioModeAsync({
+      playsInSilentMode: true,
+      interruptionMode: 'mixWithOthers',
+    })
+      .then(() => undefined)
+      .catch(() => undefined);
   }
-  return pool;
+  return audioModeReady;
 }
 
-async function restart(player: TapPlayer): Promise<void> {
+function logTap(seq: number, player: TapPlayer, extra: string): void {
+  if (!__DEV__) return;
+  const status = player.currentStatus;
+  console.log('[tapSound]', {
+    seq,
+    live: live.length,
+    extra,
+    playing: status?.playing,
+    didJustFinish: status?.didJustFinish,
+    currentTime: status?.currentTime,
+    playbackState: status?.playbackState,
+    isLoaded: status?.isLoaded,
+  });
+}
+
+function releaseShot(shot: LiveShot): void {
+  const index = live.indexOf(shot);
+  if (index < 0) return;
+  live.splice(index, 1);
   try {
-    player.pause?.();
-    await Promise.resolve(player.seekTo(0));
+    shot.player.remove?.();
+  } catch {
+    // 解放失敗は無視
+  }
+}
+
+async function playOneShot(): Promise<void> {
+  try {
+    await ensureAudioMode();
+
+    while (live.length >= TAP_SOUND_MAX_LIVE) {
+      live[0]?.release();
+    }
+
+    const seq = ++tapSeq;
+    const player = createAudioPlayer(tapSoundSource, { updateInterval: 50 });
+
+    let released = false;
+    let sub: EventSub | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const shot: LiveShot = {
+      seq,
+      player,
+      release: () => {
+        if (released) return;
+        released = true;
+        sub?.remove();
+        if (timer != null) clearTimeout(timer);
+        releaseShot(shot);
+      },
+    };
+    live.push(shot);
+
+    sub = player.addListener?.('playbackStatusUpdate', (status) => {
+      if (status.didJustFinish) {
+        logTap(seq, player, 'didJustFinish');
+        shot.release();
+      }
+    });
+    timer = setTimeout(() => shot.release(), 400);
+
+    logTap(seq, player, 'play');
     player.play();
   } catch {
     // 再生失敗はカウントを止めない
@@ -53,12 +123,13 @@ export function setTapSoundPlayerForTests(next: TapPlayer | SoundPlayerFn | null
   testPlayer = next;
 }
 
-/** テスト用。本番プレイヤーの遅延生成をやり直す */
+/** テスト用。ワンショット状態を戻す */
 export function resetTapSoundForTests(): void {
+  for (const shot of [...live]) shot.release();
+  live = [];
+  tapSeq = 0;
   testPlayer = null;
-  pool = [];
-  nextIndex = 0;
-  audioModeRequested = false;
+  audioModeReady = null;
 }
 
 /** ＋・−を押したときのタップ音（設定がオンのときだけ） */
@@ -69,10 +140,11 @@ export function tapSound(): void {
       testPlayer();
       return;
     }
-    const players = getPool();
-    const current = players[nextIndex % players.length];
-    nextIndex += 1;
-    void restart(current);
+    if (testPlayer) {
+      testPlayer.play();
+      return;
+    }
+    void playOneShot();
   } catch {
     // 再生失敗はカウントを止めない
   }
