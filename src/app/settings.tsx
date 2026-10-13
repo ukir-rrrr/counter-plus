@@ -3,7 +3,12 @@ import { Alert, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ProBanner } from '@/features/purchases/components/ProBanner';
-import { openSupportLink, restorePurchases, type SettingsActionResult } from '@/features/settings/actions';
+import {
+  openLegalScreen,
+  openSupportLink,
+  restorePurchases,
+  type SettingsActionResult,
+} from '@/features/settings/actions';
 import { SettingsHeader } from '@/features/settings/components/SettingsHeader';
 import { SettingsLinkRow } from '@/features/settings/components/SettingsLinkRow';
 import { SettingsSection } from '@/features/settings/components/SettingsSection';
@@ -15,7 +20,7 @@ import { RESTORE_NONE_MESSAGE, RESTORE_OK_MESSAGE } from '@/lib/purchases';
 
 function showSupportResult(result: SettingsActionResult): void {
   if (result.ok || result.reason === 'busy') return;
-  Alert.alert('準備中', result.message ?? 'この機能は準備中です。');
+  Alert.alert('開けません', result.message ?? 'リンクを開けませんでした。');
 }
 
 function showRestoreResult(result: SettingsActionResult): void {
@@ -111,7 +116,7 @@ export default function SettingsScreen() {
             label="利用規約"
             showChevron
             onPress={() => {
-              void openSupportLink('terms').then(showSupportResult);
+              showSupportResult(openLegalScreen('terms'));
             }}
           />
           <SettingsLinkRow
@@ -120,7 +125,7 @@ export default function SettingsScreen() {
             showChevron
             last
             onPress={() => {
-              void openSupportLink('privacy').then(showSupportResult);
+              showSupportResult(openLegalScreen('privacy'));
             }}
           />
         </SettingsSection>

@@ -4,14 +4,20 @@ import { ChevronLeftIcon } from '@/components/icons';
 import { useThemeColors } from '@/constants/use-theme-colors';
 import { useTransitionBack } from '@/lib/transitionNav';
 
-export function SettingsHeader() {
+export function SettingsHeader({
+  title = '設定',
+  backTestID = 'settings-back',
+}: {
+  title?: string;
+  backTestID?: string;
+}) {
   const c = useThemeColors();
   const goBack = useTransitionBack();
 
   return (
     <View className="flex-row items-center justify-between px-2.5 pb-1.5">
       <Pressable
-        testID="settings-back"
+        testID={backTestID}
         accessibilityRole="button"
         accessibilityLabel="戻る"
         onPress={goBack}
@@ -19,7 +25,7 @@ export function SettingsHeader() {
         <ChevronLeftIcon color={c.ink} />
       </Pressable>
       <Text accessibilityRole="header" className="font-sans-bold text-title text-ink">
-        設定
+        {title}
       </Text>
       <View className="h-11 w-11" />
     </View>

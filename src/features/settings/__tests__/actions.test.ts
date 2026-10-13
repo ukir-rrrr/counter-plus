@@ -7,14 +7,19 @@ import {
 } from '@/lib/purchases';
 
 import {
+  appStoreReviewUrl,
+  contactMailtoUrl,
+  CONTACT_UNAVAILABLE_MESSAGE,
+  getSupportUrls,
   isRestoreInFlight,
   isSupportInFlight,
+  openLegalScreen,
   openSupportLink,
   resetSettingsActionLocksForTests,
   restorePurchases,
   RESTORE_UNAVAILABLE_MESSAGE,
+  REVIEW_UNAVAILABLE_MESSAGE,
   setRestorePurchasesImplForTests,
-  UNAVAILABLE_MESSAGE,
   type SupportOpener,
 } from '../actions';
 
@@ -147,11 +152,12 @@ describe('openSupportLink', () => {
     await expect(openSupportLink('review', opener, empty)).resolves.toEqual({
       ok: false,
       reason: 'unavailable',
-      message: UNAVAILABLE_MESSAGE,
+      message: REVIEW_UNAVAILABLE_MESSAGE,
     });
-    await expect(openSupportLink('contact', opener, empty)).resolves.toMatchObject({
+    await expect(openSupportLink('contact', opener, empty)).resolves.toEqual({
       ok: false,
       reason: 'unavailable',
+      message: CONTACT_UNAVAILABLE_MESSAGE,
     });
     expect(opener.openBrowser).not.toHaveBeenCalled();
     expect(opener.openExternal).not.toHaveBeenCalled();
@@ -197,5 +203,66 @@ describe('openSupportLink', () => {
     gate.resolve();
     await expect(first).resolves.toEqual({ ok: true });
     expect(isSupportInFlight()).toBe(false);
+  });
+});
+
+describe('サポートURLの組み立て', () => {
+  it('通常：数字の App Store ID とメールから URL を作る', () => {
+    expect(appStoreReviewUrl('1234567890')).toBe(
+      'https://apps.apple.com/app/id1234567890?action=write-review',
+    );
+    expect(contactMailtoUrl('hello@example.com')).toBe(
+      'mailto:hello@example.com?subject=%E3%82%AB%E3%82%A6%E3%83%B3%E3%82%BF%E3%83%BC%EF%BC%8B%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6%E3%81%AE%E5%95%8F%E3%81%84%E5%90%88%E3%82%8F%E3%81%9B',
+    );
+    expect(getSupportUrls({ EXPO_PUBLIC_APP_STORE_ID: '42', EXPO_PUBLIC_SUPPORT_EMAIL: 'a@b.c' })).toEqual({
+      review: 'https://apps.apple.com/app/id42?action=write-review',
+      contact: 'mailto:a@b.c?subject=%E3%82%AB%E3%82%A6%E3%83%B3%E3%82%BF%E3%83%BC%EF%BC%8B%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6%E3%81%AE%E5%95%8F%E3%81%84%E5%90%88%E3%82%8F%E3%81%9B',
+      terms: '',
+      privacy: '',
+    });
+  });
+
+  it('空・不正な値は URL にしない', () => {
+    expect(appStoreReviewUrl('')).toBe('');
+    expect(appStoreReviewUrl('  ')).toBe('');
+    expect(appStoreReviewUrl('id123')).toBe('');
+    expect(contactMailtoUrl('')).toBe('');
+    expect(contactMailtoUrl('not-an-email')).toBe('');
+    expect(contactMailtoUrl('a @b.c')).toBe('');
+  });
+});
+
+describe('openLegalScreen', () => {
+  beforeEach(() => {
+    resetSettingsActionLocksForTests();
+  });
+
+  it('通常：利用規約とプライバシーのアプリ内画面へ進む', async () => {
+    const navigate = jest.fn();
+    expect(openLegalScreen('terms', navigate)).toEqual({ ok: true });
+    expect(navigate).toHaveBeenCalledWith('/legal/terms');
+    await Promise.resolve();
+    expect(openLegalScreen('privacy', navigate)).toEqual({ ok: true });
+    expect(navigate).toHaveBeenCalledWith('/legal/privacy');
+  });
+
+  it('エラー：navigate が投げたら error', () => {
+    const navigate = jest.fn(() => {
+      throw new Error('nav fail');
+    });
+    expect(openLegalScreen('terms', navigate)).toEqual({
+      ok: false,
+      reason: 'error',
+      message: 'nav fail',
+    });
+  });
+
+  it('連打：同時の2回目は busy で、遷移は1回', () => {
+    const navigate = jest.fn();
+    const first = openLegalScreen('terms', navigate);
+    const extras = [openLegalScreen('terms', navigate), openLegalScreen('privacy', navigate)];
+    expect(first).toEqual({ ok: true });
+    expect(extras.every((r) => r.ok === false && r.reason === 'busy')).toBe(true);
+    expect(navigate).toHaveBeenCalledTimes(1);
   });
 });

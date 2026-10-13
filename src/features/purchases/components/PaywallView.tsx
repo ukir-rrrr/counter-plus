@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CheckIcon, ClockIcon, CloseIcon, PlusIcon } from '@/components/icons';
 import { useThemeColors } from '@/constants/use-theme-colors';
-import { openSupportLink } from '@/features/settings/actions';
+import { openLegalScreen, type SettingsActionResult } from '@/features/settings/actions';
 import { countHistoryEvents } from '@/features/history/repository';
 import {
   DEV_BUILD_ONLY_MESSAGE,
@@ -250,10 +250,9 @@ export function PaywallView({ openedFrom: openedFromParam }: { openedFrom?: stri
             accessibilityRole="link"
             accessibilityLabel="利用規約"
             onPress={() => {
-              void openSupportLink('terms').then((result) => {
-                if (result.ok || result.reason === 'busy') return;
-                Alert.alert('準備中', result.message ?? 'この機能は準備中です。');
-              });
+              const result: SettingsActionResult = openLegalScreen('terms');
+              if (result.ok || result.reason === 'busy') return;
+              Alert.alert('開けません', result.message ?? 'リンクを開けませんでした。');
             }}
             className="h-11 items-center justify-center">
             <Text className="font-sans text-label text-accent">利用規約</Text>
@@ -263,10 +262,9 @@ export function PaywallView({ openedFrom: openedFromParam }: { openedFrom?: stri
             accessibilityRole="link"
             accessibilityLabel="プライバシーポリシー"
             onPress={() => {
-              void openSupportLink('privacy').then((result) => {
-                if (result.ok || result.reason === 'busy') return;
-                Alert.alert('準備中', result.message ?? 'この機能は準備中です。');
-              });
+              const result: SettingsActionResult = openLegalScreen('privacy');
+              if (result.ok || result.reason === 'busy') return;
+              Alert.alert('開けません', result.message ?? 'リンクを開けませんでした。');
             }}
             className="h-11 items-center justify-center">
             <Text className="font-sans text-label text-accent">プライバシーポリシー</Text>
