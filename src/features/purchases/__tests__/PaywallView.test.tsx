@@ -5,6 +5,7 @@ import {
   DEV_BUILD_ONLY_MESSAGE,
   initPurchases,
   NO_OFFERINGS_MESSAGE,
+  PRICE_UNAVAILABLE_MESSAGE,
   PRO_ENTITLEMENT_ID,
   resetPurchasesForTests,
   setPurchasesAvailabilityForTests,
@@ -13,6 +14,8 @@ import {
   type CustomerInfoLike,
   type PurchasesClient,
 } from '@/lib/purchases';
+
+import { PAYWALL_MIN_TOP_INSET, PAYWALL_TITLE_STYLE } from '../paywallLayout';
 
 import { PaywallView } from '../components/PaywallView';
 
@@ -86,6 +89,17 @@ describe('PaywallView', () => {
     const { getByTestId, queryByTestId, unmount } = await render(<PaywallView openedFrom="csv" />);
 
     expect(getByTestId('paywall-title').props.children).toBe('カウンター＋ Pro');
+    expect(getByTestId('paywall-title').props.style).toEqual(
+      expect.objectContaining({
+        fontSize: PAYWALL_TITLE_STYLE.fontSize,
+        lineHeight: PAYWALL_TITLE_STYLE.lineHeight,
+        paddingTop: PAYWALL_TITLE_STYLE.paddingTop,
+      }),
+    );
+    expect(getByTestId('paywall-header')).toBeTruthy();
+    expect(getByTestId('paywall-header').props.style).toEqual(
+      expect.objectContaining({ paddingTop: PAYWALL_MIN_TOP_INSET }),
+    );
     expect(getByTestId('paywall-history-count').props.children).toBe(128);
     expect(getByTestId('paywall-price').props.children).toBe('¥800');
     expect(getByTestId('paywall-benefit-csv')).toBeTruthy();
@@ -111,8 +125,10 @@ describe('PaywallView', () => {
     setPurchasesAvailabilityForTests({ available: true });
     await initPurchases();
 
-    const { getByTestId, unmount } = await render(<PaywallView openedFrom="history" />);
+    const { getByTestId, queryByTestId, unmount } = await render(<PaywallView openedFrom="history" />);
     expect(getByTestId('paywall-empty').props.children).toBe(NO_OFFERINGS_MESSAGE);
+    expect(getByTestId('paywall-price-fallback').props.children).toBe(PRICE_UNAVAILABLE_MESSAGE);
+    expect(queryByTestId('paywall-price')).toBeNull();
     expect(getByTestId('paywall-buy').props.accessibilityState).toMatchObject({ disabled: true });
 
     await act(async () => {
@@ -144,8 +160,11 @@ describe('PaywallView', () => {
 
   it('未導入：開発ビルドの案内を出し、連打しても購入は1回', async () => {
     await initPurchases();
-    const { getByTestId, unmount } = await render(<PaywallView openedFrom="settings" />);
+    const { getByTestId, queryByTestId, unmount } = await render(<PaywallView openedFrom="settings" />);
     expect(getByTestId('paywall-unavailable').props.children).toBe(DEV_BUILD_ONLY_MESSAGE);
+    expect(getByTestId('paywall-price-fallback').props.children).toBe(PRICE_UNAVAILABLE_MESSAGE);
+    expect(queryByTestId('paywall-price')).toBeNull();
+    expect(getByTestId('paywall-buy').props.accessibilityState).toMatchObject({ disabled: true });
 
     await act(async () => {
       fireEvent.press(getByTestId('paywall-buy'));

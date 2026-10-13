@@ -16,6 +16,7 @@ export const RESTORE_FAILED_MESSAGE = '購入を復元できませんでした�
 export const RESTORE_OK_MESSAGE = '購入を復元しました';
 export const RESTORE_NONE_MESSAGE = '復元できる購入がありません';
 export const OFFERINGS_LOAD_FAILED_MESSAGE = '購入情報を読み込めませんでした';
+export const PRICE_UNAVAILABLE_MESSAGE = '価格は開発ビルドで表示されます';
 
 export const PAYWALL_OPENED_FROM = ['csv', 'history', 'category', 'sort', 'ads', 'settings'] as const;
 export type PaywallOpenedFrom = (typeof PAYWALL_OPENED_FROM)[number];

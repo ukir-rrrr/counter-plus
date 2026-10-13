@@ -81,7 +81,25 @@ jest.mock('expo-router', () => ({
     const React = require('react');
     React.useEffect(cb, [cb]);
   },
+  usePathname: () => '/',
+  useSegments: () => [],
 }));
+
+jest.mock('expo-dev-client', () => ({
+  setToolsButtonVisible: jest.fn(),
+}));
+
+jest.mock('expo-modules-core', () => {
+  const actual = jest.requireActual('expo-modules-core');
+  return {
+    ...actual,
+    requireOptionalNativeModule: jest.fn((name) =>
+      typeof actual.requireOptionalNativeModule === 'function'
+        ? actual.requireOptionalNativeModule(name)
+        : null,
+    ),
+  };
+});
 
 jest.mock('react-native-purchases', () => ({
   __esModule: true,

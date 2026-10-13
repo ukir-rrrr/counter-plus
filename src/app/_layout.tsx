@@ -19,9 +19,15 @@ import { db } from '@/db/client';
 import migrations from '@/db/migrations/migrations';
 import { ensureDefaultCategory } from '@/features/categories/repository';
 import { useSettingsStore } from '@/features/settings/store';
+import { useHideDevToolsFabOnModals } from '@/lib/devToolsFab';
 import { initPurchases } from '@/lib/purchases';
 
 SplashScreen.preventAutoHideAsync();
+
+function DevToolsFabGate() {
+  useHideDevToolsFabOnModals();
+  return null;
+}
 
 function navigationTheme(scheme: ColorScheme): Theme {
   const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
@@ -87,6 +93,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={navigationTheme(scheme)}>
+        <DevToolsFabGate />
         <Stack>
           {/* 編集シート：透明なモーダルの上に @gorhom/bottom-sheet を出す */}
           <Stack.Screen

@@ -11,6 +11,7 @@ import {
   DEV_BUILD_ONLY_MESSAGE,
   destinationAfterPurchase,
   parseOpenedFrom,
+  PRICE_UNAVAILABLE_MESSAGE,
   purchasePro,
   RESTORE_NONE_MESSAGE,
   RESTORE_OK_MESSAGE,
@@ -22,6 +23,7 @@ import {
 } from '@/lib/purchases';
 
 import { isBenefitHighlighted, PAYWALL_BENEFITS, paywallBenefitTestId } from '../benefits';
+import { PAYWALL_TITLE_STYLE, paywallFooterBottom, paywallTopInset } from '../paywallLayout';
 
 function showPurchaseResult(result: PurchaseResult, kind: 'buy' | 'restore'): void {
   if (result.ok) {
@@ -81,8 +83,11 @@ export function PaywallView({ openedFrom: openedFromParam }: { openedFrom?: stri
       : 'Proにする';
 
   return (
-    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
-      <View className="flex-row items-center justify-between px-2.5">
+    <View className="flex-1 bg-background">
+      <View
+        testID="paywall-header"
+        className="z-10 shrink-0 flex-row items-center justify-between bg-background px-2.5 pb-3"
+        style={{ paddingTop: paywallTopInset(insets.top) }}>
         <Pressable
           testID="paywall-close"
           accessibilityRole="button"
@@ -105,17 +110,20 @@ export function PaywallView({ openedFrom: openedFromParam }: { openedFrom?: stri
       <ScrollView
         testID="paywall-scroll"
         className="flex-1"
-        contentContainerClassName="gap-3.5 px-5 pb-4 pt-2"
+        contentContainerClassName="gap-3.5 px-5 pb-4 pt-1"
         keyboardShouldPersistTaps="handled">
-        <View className="flex-row items-center gap-3.5">
-          <View className="h-[60px] w-[60px] items-center justify-center rounded-card bg-accent">
+        <View className="flex-row items-start gap-3.5">
+          <View className="mt-1 h-[60px] w-[60px] shrink-0 items-center justify-center rounded-card bg-accent">
             <PlusIcon color={c.onAccent} size={30} strokeWidth={2.6} />
           </View>
-          <View className="min-w-0 flex-1 gap-0.5">
-            <Text testID="paywall-title" className="font-sans-bold text-[24px] leading-7 text-ink">
+          <View className="min-w-0 flex-1 justify-center" style={{ minHeight: 60, paddingTop: 2 }}>
+            <Text
+              testID="paywall-title"
+              className="font-sans-bold text-ink"
+              style={PAYWALL_TITLE_STYLE}>
               カウンター＋ Pro
             </Text>
-            <Text testID="paywall-subtitle" className="font-sans text-body-sm text-ink-muted">
+            <Text testID="paywall-subtitle" className="mt-1 font-sans text-body-sm leading-5 text-ink-muted">
               棚卸しの「最後の転記」までラクにする
             </Text>
           </View>
@@ -177,7 +185,7 @@ export function PaywallView({ openedFrom: openedFromParam }: { openedFrom?: stri
         ) : null}
       </ScrollView>
 
-      <View className="gap-2.5 px-5" style={{ paddingBottom: Math.max(insets.bottom, 16) }}>
+      <View className="gap-2.5 px-5" style={{ paddingBottom: paywallFooterBottom(insets.bottom) }}>
         {isPro ? (
           <View testID="paywall-purchased" className="items-center gap-2.5">
             <View className="h-[52px] w-[52px] items-center justify-center rounded-full bg-accent-soft">
@@ -196,13 +204,21 @@ export function PaywallView({ openedFrom: openedFromParam }: { openedFrom?: stri
           </View>
         ) : (
           <View className="gap-2.5">
-            <View className="flex-row items-baseline justify-center gap-2">
-              <Text className="font-sans-medium text-body-sm text-ink-muted">買い切り</Text>
-              <Text testID="paywall-price" className="font-mono-semibold text-total-sm text-ink">
-                {priceString ?? '—'}
+            {priceString ? (
+              <View className="flex-row items-baseline justify-center gap-2">
+                <Text className="font-sans-medium text-body-sm text-ink-muted">買い切り</Text>
+                <Text testID="paywall-price" className="font-mono-semibold text-total-sm text-ink">
+                  {priceString}
+                </Text>
+              </View>
+            ) : (
+              <Text
+                testID="paywall-price-fallback"
+                className="text-center font-sans text-label text-ink-muted">
+                {PRICE_UNAVAILABLE_MESSAGE}
               </Text>
-            </View>
-            <Text className="-mt-1.5 text-center font-sans text-label text-ink-muted">
+            )}
+            <Text className="text-center font-sans text-label text-ink-muted">
               サブスクではありません。追加の支払いはありません。
             </Text>
             <Pressable
