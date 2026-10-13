@@ -43,7 +43,7 @@ RevenueCat（react-native-purchases）/ AdMob（react-native-google-mobile-ads�
 - 画面から直接SQLを書かない。DBアクセスは `src/features/*/repository.ts` 経由
 - カウント操作の順番：Zustandの値を更新して即座に描画 → SQLiteに保存し、同じトランザクションで `count_events` に1行追加
 - 保存ボタンは作らない（すべて自動保存）
-- Proかどうかの判定は `useIsPro()`（`src/lib/purchases.ts`）だけで行う
+- Proかどうかの判定は `useIsPro()` / `getIsPro()`（`src/lib/purchases.ts`）だけで行う。フックが使えない場所は `getIsPro()`
 - 広告はホーム画面最下部のバナー1つだけ。Proなら表示しない。開発中は必ずAdMobのテスト広告IDを使う
 - 計測イベントに、項目名やメモなどユーザーが入力した内容を含めない
 - 色・文字サイズ・角丸は `docs/design/screens.md` のトークンを使い、直書きしない

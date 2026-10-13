@@ -34,8 +34,6 @@ export type AnalyticsProps = {
 
 export type AnalyticsClient = {
   capture: (event: string, properties?: Record<string, unknown>) => void;
-  optOut?: () => void;
-  optIn?: () => void;
 };
 
 function isExpoGoEnv(): boolean {
@@ -51,13 +49,14 @@ function isExpoGoEnv(): boolean {
   }
 }
 
-export function getPostHogKey(env: Record<string, string | undefined> = process.env): string | null {
-  const raw = env.EXPO_PUBLIC_POSTHOG_API_KEY?.trim() ?? '';
+export function getPostHogKey(): string | null {
+  // Metro が本番バンドルで値を埋め込むので、process.env.EXPO_PUBLIC_* を直接書く
+  const raw = process.env.EXPO_PUBLIC_POSTHOG_API_KEY?.trim() ?? '';
   return raw.length > 0 ? raw : null;
 }
 
-export function getPostHogHost(env: Record<string, string | undefined> = process.env): string {
-  const raw = env.EXPO_PUBLIC_POSTHOG_HOST?.trim() ?? '';
+export function getPostHogHost(): string {
+  const raw = process.env.EXPO_PUBLIC_POSTHOG_HOST?.trim() ?? '';
   return raw.length > 0 ? raw : DEFAULT_POSTHOG_HOST;
 }
 
@@ -83,7 +82,6 @@ export function sanitizeAnalyticsProps(props?: Record<string, unknown> | null): 
 
 let injectedClient: AnalyticsClient | null = null;
 let client: AnalyticsClient | null = null;
-let optedOut = false;
 let initPromise: Promise<void> | null = null;
 let pendingCountTaps = 0;
 let flushTimer: ReturnType<typeof setTimeout> | undefined;
@@ -103,7 +101,8 @@ function tryCreatePostHog(apiKey: string, host: string): AnalyticsClient | null 
       captureAppLifecycleEvents: false,
       enableSessionReplay: false,
       disableGeoip: true,
-      persistence: 'memory',
+      // 匿名IDを端末に残し、継続利用を測る（個人情報は載せない）
+      persistence: 'file',
     });
   } catch (e) {
     console.warn('PostHog を読み込めませんでした', e);
@@ -116,7 +115,6 @@ function getClient(): AnalyticsClient | null {
 }
 
 export function capture(event: string, props?: Record<string, unknown>): void {
-  if (optedOut) return;
   if (!isAllowedAnalyticsEvent(event)) return;
   const target = getClient();
   if (!target) return;
@@ -129,7 +127,7 @@ export function capture(event: string, props?: Record<string, unknown>): void {
 }
 
 export function noteCountTapped(): void {
-  if (optedOut || !getClient()) return;
+  if (!getClient()) return;
   pendingCountTaps += 1;
   if (pendingCountTaps >= COUNT_TAP_FLUSH_SIZE) {
     flushCountTapped();
@@ -157,21 +155,6 @@ export function getPendingCountTapsForTests(): number {
   return pendingCountTaps;
 }
 
-export function setAnalyticsOptOut(value: boolean): void {
-  optedOut = value;
-  const target = getClient();
-  try {
-    if (value) {
-      flushCountTapped();
-      target?.optOut?.();
-    } else {
-      target?.optIn?.();
-    }
-  } catch (e) {
-    console.warn('計測のオプトアウト設定に失敗しました', e);
-  }
-}
-
 function subscribeBackgroundFlush(): void {
   if (appStateSub) return;
   appStateSub = AppState.addEventListener('change', (state: AppStateStatus) => {
@@ -183,7 +166,6 @@ function subscribeBackgroundFlush(): void {
 
 async function runInitAnalytics(): Promise<void> {
   try {
-    if (optedOut) return;
     if (injectedClient) {
       client = injectedClient;
     } else {
@@ -218,7 +200,6 @@ export function setAnalyticsClientForTests(value: AnalyticsClient | null): void 
 export function resetAnalyticsForTests(): void {
   injectedClient = null;
   client = null;
-  optedOut = false;
   initPromise = null;
   pendingCountTaps = 0;
   if (flushTimer != null) {

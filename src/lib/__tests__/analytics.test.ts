@@ -15,31 +15,37 @@ import {
   resetAnalyticsForTests,
   sanitizeAnalyticsProps,
   setAnalyticsClientForTests,
-  setAnalyticsOptOut,
   type AnalyticsClient,
 } from '../analytics';
+import { withPublicEnv } from './withPublicEnv';
 
 function mockClient(overrides: Partial<AnalyticsClient> = {}): AnalyticsClient {
   return {
     capture: jest.fn(),
-    optOut: jest.fn(),
-    optIn: jest.fn(),
     ...overrides,
   };
 }
 
 describe('analytics 純粋ロジック', () => {
   it('キーは空・空白を無し、値があれば返す', () => {
-    expect(getPostHogKey({})).toBeNull();
-    expect(getPostHogKey({ EXPO_PUBLIC_POSTHOG_API_KEY: '  ' })).toBeNull();
-    expect(getPostHogKey({ EXPO_PUBLIC_POSTHOG_API_KEY: 'phc_test' })).toBe('phc_test');
+    withPublicEnv({ EXPO_PUBLIC_POSTHOG_API_KEY: undefined }, () => {
+      expect(getPostHogKey()).toBeNull();
+    });
+    withPublicEnv({ EXPO_PUBLIC_POSTHOG_API_KEY: '  ' }, () => {
+      expect(getPostHogKey()).toBeNull();
+    });
+    withPublicEnv({ EXPO_PUBLIC_POSTHOG_API_KEY: 'phc_test' }, () => {
+      expect(getPostHogKey()).toBe('phc_test');
+    });
   });
 
   it('ホストの既定値がある', () => {
-    expect(getPostHogHost({})).toBe('https://us.i.posthog.com');
-    expect(getPostHogHost({ EXPO_PUBLIC_POSTHOG_HOST: 'https://eu.i.posthog.com' })).toBe(
-      'https://eu.i.posthog.com',
-    );
+    withPublicEnv({ EXPO_PUBLIC_POSTHOG_HOST: undefined }, () => {
+      expect(getPostHogHost()).toBe('https://us.i.posthog.com');
+    });
+    withPublicEnv({ EXPO_PUBLIC_POSTHOG_HOST: 'https://eu.i.posthog.com' }, () => {
+      expect(getPostHogHost()).toBe('https://eu.i.posthog.com');
+    });
   });
 
   it('計画のイベントだけ許可する', () => {
@@ -89,10 +95,12 @@ describe('analytics 送信', () => {
   });
 
   it('キー無し・クライアント無しは no-op', async () => {
-    await initAnalytics();
-    capture('app_open');
-    noteCountTapped();
-    expect(getPendingCountTapsForTests()).toBe(0);
+    await withPublicEnv({ EXPO_PUBLIC_POSTHOG_API_KEY: undefined }, async () => {
+      await initAnalytics();
+      capture('app_open');
+      noteCountTapped();
+      expect(getPendingCountTapsForTests()).toBe(0);
+    });
   });
 
   it('capture が失敗しても投げない', () => {
@@ -126,16 +134,6 @@ describe('analytics 送信', () => {
     expect(client.capture).toHaveBeenCalledWith('count_tapped', { count: 2 });
   });
 
-  it('オプトアウト中は送らない', () => {
-    const client = mockClient();
-    setAnalyticsClientForTests(client);
-    setAnalyticsOptOut(true);
-    capture('app_open');
-    noteCountTapped();
-    expect(client.capture).not.toHaveBeenCalled();
-    expect(client.optOut).toHaveBeenCalled();
-  });
-
   it('init は連打しても1回', async () => {
     const client = mockClient();
     setAnalyticsClientForTests(client);
@@ -150,6 +148,10 @@ describe('analytics 送信', () => {
 
     openPaywall('history');
     expect(client.capture).toHaveBeenCalledWith('pro_gate_shown', { from: 'history' });
+
+    (client.capture as jest.Mock).mockClear();
+    openPaywall('settings');
+    expect(client.capture).not.toHaveBeenCalled();
 
     resetShareLockForTests();
     await shareCsvFile('counter_棚A_20261013.csv', '項目名,数\r\nA,1\r\n', {

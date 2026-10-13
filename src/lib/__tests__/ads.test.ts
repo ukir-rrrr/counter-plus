@@ -1,5 +1,6 @@
 import { resetPurchasesForTests, usePurchasesStore } from '@/lib/purchases';
 
+import { withPublicEnv } from './withPublicEnv';
 import {
   ATT_AFTER_HOME_MS,
   bannerRequestOptions,
@@ -37,15 +38,17 @@ function mockTracking(overrides: Partial<TrackingClient> = {}): TrackingClient {
 
 describe('ads 純粋ロジック', () => {
   it('開発中はテストID、本番は環境変数。空・空白は無し', () => {
-    expect(getBannerUnitId({}, 'ios', true)).toBe(TEST_BANNER_UNIT_IDS.ios);
-    expect(getBannerUnitId({}, 'android', true)).toBe(TEST_BANNER_UNIT_IDS.android);
-    expect(getBannerUnitId({ EXPO_PUBLIC_ADMOB_IOS_BANNER_UNIT_ID: '  ' }, 'ios', false)).toBeNull();
-    expect(
-      getBannerUnitId({ EXPO_PUBLIC_ADMOB_IOS_BANNER_UNIT_ID: 'ca-app-pub-1/2' }, 'ios', false),
-    ).toBe('ca-app-pub-1/2');
-    expect(
-      getBannerUnitId({ EXPO_PUBLIC_ADMOB_ANDROID_BANNER_UNIT_ID: 'ca-app-pub-3/4' }, 'android', false),
-    ).toBe('ca-app-pub-3/4');
+    expect(getBannerUnitId('ios', true)).toBe(TEST_BANNER_UNIT_IDS.ios);
+    expect(getBannerUnitId('android', true)).toBe(TEST_BANNER_UNIT_IDS.android);
+    withPublicEnv({ EXPO_PUBLIC_ADMOB_IOS_BANNER_UNIT_ID: '  ' }, () => {
+      expect(getBannerUnitId('ios', false)).toBeNull();
+    });
+    withPublicEnv({ EXPO_PUBLIC_ADMOB_IOS_BANNER_UNIT_ID: 'ca-app-pub-1/2' }, () => {
+      expect(getBannerUnitId('ios', false)).toBe('ca-app-pub-1/2');
+    });
+    withPublicEnv({ EXPO_PUBLIC_ADMOB_ANDROID_BANNER_UNIT_ID: 'ca-app-pub-3/4' }, () => {
+      expect(getBannerUnitId('android', false)).toBe('ca-app-pub-3/4');
+    });
   });
 
   it('拒否なら非パーソナライズ広告にする', () => {

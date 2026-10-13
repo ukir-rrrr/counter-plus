@@ -6,6 +6,7 @@ import {
   destinationAfterPurchase,
   FREE_CATEGORY_LIMIT,
   getApiKey,
+  getIsPro,
   initPurchases,
   inspectPurchasesAvailability,
   isProFromCustomerInfo,
@@ -35,6 +36,7 @@ import {
   type PackageLike,
   type PurchasesClient,
 } from '../purchases';
+import { withPublicEnv } from './withPublicEnv';
 
 jest.mock('expo-router', () => ({
   router: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: jest.fn(() => true) },
@@ -84,9 +86,23 @@ function mockClient(overrides: Partial<PurchasesClient> = {}): PurchasesClient {
 
 describe('purchases 純粋ロジック', () => {
   it('APIキーは空・空白を無し、値があれば返す', () => {
-    expect(getApiKey({ EXPO_PUBLIC_REVENUECAT_IOS_KEY: '  ' }, 'ios')).toBeNull();
-    expect(getApiKey({ EXPO_PUBLIC_REVENUECAT_IOS_KEY: 'appl_test' }, 'ios')).toBe('appl_test');
-    expect(getApiKey({ EXPO_PUBLIC_REVENUECAT_ANDROID_KEY: 'goog_test' }, 'android')).toBe('goog_test');
+    withPublicEnv({ EXPO_PUBLIC_REVENUECAT_IOS_KEY: '  ' }, () => {
+      expect(getApiKey('ios')).toBeNull();
+    });
+    withPublicEnv({ EXPO_PUBLIC_REVENUECAT_IOS_KEY: 'appl_test' }, () => {
+      expect(getApiKey('ios')).toBe('appl_test');
+    });
+    withPublicEnv({ EXPO_PUBLIC_REVENUECAT_ANDROID_KEY: 'goog_test' }, () => {
+      expect(getApiKey('android')).toBe('goog_test');
+    });
+  });
+
+  it('getIsPro はストアの Pro を返す', () => {
+    resetPurchasesForTests();
+    expect(getIsPro()).toBe(false);
+    usePurchasesStore.setState({ isPro: true });
+    expect(getIsPro()).toBe(true);
+    resetPurchasesForTests();
   });
 
   it('Entitlement pro の有無で判定する', () => {
@@ -160,16 +176,14 @@ describe('purchases ストア', () => {
   });
 
   it('キーがあるときだけ configure する', async () => {
-    const previous = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY;
-    process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY = 'appl_test';
-    const client = mockClient();
-    setPurchasesClientForTests(client);
-    setPurchasesAvailabilityForTests({ available: true });
+    await withPublicEnv({ EXPO_PUBLIC_REVENUECAT_IOS_KEY: 'appl_test' }, async () => {
+      const client = mockClient();
+      setPurchasesClientForTests(client);
+      setPurchasesAvailabilityForTests({ available: true });
 
-    await initPurchases();
-    expect(client.configure).toHaveBeenCalledWith({ apiKey: 'appl_test' });
-
-    process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY = previous;
+      await initPurchases();
+      expect(client.configure).toHaveBeenCalledWith({ apiKey: 'appl_test' });
+    });
   });
 
   it('空データ：提供が無いときは購入できない', async () => {

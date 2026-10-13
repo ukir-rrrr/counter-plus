@@ -2,7 +2,7 @@ import { createElement, useState, type ComponentType } from 'react';
 import { Platform, View, type ViewStyle } from 'react-native';
 import { create } from 'zustand';
 
-import { useIsPro, usePurchasesStore } from '@/lib/purchases';
+import { getIsPro, useIsPro } from '@/lib/purchases';
 
 /** ホームが表示されてから ATT を出すまでの待ち時間。スプラッシュ中には出さない */
 export const ATT_AFTER_HOME_MS = 1500;
@@ -107,20 +107,22 @@ function hasNativeAdsModule(): boolean {
 }
 
 export function getBannerUnitId(
-  env: Record<string, string | undefined> = process.env,
   os: string = Platform.OS,
   isDev: boolean = typeof __DEV__ !== 'undefined' ? __DEV__ : true,
 ): string | null {
   if (isDev) {
     return os === 'android' ? TEST_BANNER_UNIT_IDS.android : TEST_BANNER_UNIT_IDS.ios;
   }
-  const raw = os === 'ios' ? env.EXPO_PUBLIC_ADMOB_IOS_BANNER_UNIT_ID : env.EXPO_PUBLIC_ADMOB_ANDROID_BANNER_UNIT_ID;
+  // Metro が本番バンドルで値を埋め込むので、process.env.EXPO_PUBLIC_* を直接書く
+  const raw =
+    os === 'ios'
+      ? process.env.EXPO_PUBLIC_ADMOB_IOS_BANNER_UNIT_ID
+      : process.env.EXPO_PUBLIC_ADMOB_ANDROID_BANNER_UNIT_ID;
   const id = raw?.trim() ?? '';
   return id.length > 0 ? id : null;
 }
 
 export function inspectAdsAvailability(
-  env: Record<string, string | undefined> = process.env,
   os: string = Platform.OS,
   isDev: boolean = typeof __DEV__ !== 'undefined' ? __DEV__ : true,
 ): AdsAvailability {
@@ -130,7 +132,7 @@ export function inspectAdsAvailability(
   if (!isNativeStorePlatform(os) || !hasNativeAdsModule()) {
     return { available: false, reason: 'no_native' };
   }
-  if (!getBannerUnitId(env, os, isDev)) return { available: false, reason: 'no_key' };
+  if (!getBannerUnitId(os, isDev)) return { available: false, reason: 'no_key' };
   return { available: true };
 }
 
@@ -261,7 +263,7 @@ async function runPrepareHomeAds(): Promise<void> {
   try {
     await delayImpl(ATT_AFTER_HOME_MS);
 
-    if (usePurchasesStore.getState().isPro) {
+    if (getIsPro()) {
       useAdsStore.setState({ ready: true, available: false, initialized: false, unitId: null });
       return;
     }

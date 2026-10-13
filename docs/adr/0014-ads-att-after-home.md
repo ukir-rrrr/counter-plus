@@ -5,7 +5,7 @@
 
 ## 決定
 
-- 広告はホーム最下部のアダプティブバナー1つだけ（`src/lib/ads.tsx`）。判定は `useIsPro()`。開発中は AdMob のテストユニットIDを使う。
+- 広告はホーム最下部のアダプティブバナー1つだけ（`src/lib/ads.tsx`）。判定は `useIsPro()` / `getIsPro()`。開発中は AdMob のテストユニットIDを使う。
 - ATT（`expo-tracking-transparency`）はスプラッシュ中ではなく、ホームが表示されてから出す。拒否されたら非パーソナライズ広告にする。
 - 計測は PostHog（`src/lib/analytics.ts`）。architecture.md のイベントだけを送り、項目名やメモは送らない。`count_tapped` はまとめて送る。
 - Expo Go・ネイティブモジュールなし・キーなしでは広告を出さず、計測は no-op。クラッシュさせない。

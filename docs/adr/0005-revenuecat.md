@@ -4,7 +4,7 @@
 - 状態：決定
 
 ## 決定
-買い切りのPro（Entitlement: pro）の購入・復元・判定にRevenueCatを使う。アプリ内の判定は useIsPro() に一本化する。
+買い切りのPro（Entitlement: pro）の購入・復元・判定にRevenueCatを使う。アプリ内の判定は useIsPro() / getIsPro() に一本化する。
 
 ## 理由
 購入・復元・判定を自前で実装する手間と不具合のリスクを減らせる。売上が少ないうちは無料で使える。

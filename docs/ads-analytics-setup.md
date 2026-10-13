@@ -63,6 +63,7 @@ EAS Build では [Environment variables](https://docs.expo.dev/eas/environment-v
 2. Project settings の **Project API Key**（`phc_` で始まる）を控える → `EXPO_PUBLIC_POSTHOG_API_KEY`
 3. リージョンに合わせてホストを入れる（US Cloud なら `https://us.i.posthog.com`）→ `EXPO_PUBLIC_POSTHOG_HOST`
 4. セッションリプレイは使わない。autocapture も使わない（項目名が混ざるため）
+5. 匿名の distinct ID は端末内に残す（`persistence: 'file'`）。起動のたびに付け替えないので継続利用が測れる。メールや名前は載せない
 
 送るイベント（入力内容は含まない）:
 
@@ -71,7 +72,7 @@ EAS Build では [Environment variables](https://docs.expo.dev/eas/environment-v
 | `app_open` | 起動 |
 | `counter_created` / `category_created` | 項目・カテゴリを足した（名前は送らない） |
 | `count_tapped` | カウント回数（まとめて送る。`count` のみ） |
-| `pro_gate_shown` | 購入画面を出した理由（`from`） |
+| `pro_gate_shown` | Pro機能のゲートで購入画面が出た理由（`from`）。設定からの自主オープンは送らない |
 | `purchase_completed` | 購入した（`from`） |
 | `csv_exported` | CSV を共有した |
 

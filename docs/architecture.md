@@ -114,7 +114,7 @@ counter-plus/
       export/               # CSV生成と共有
       settings/
     lib/
-      purchases.ts          # RevenueCat、useIsPro()
+      purchases.ts          # RevenueCat、useIsPro() / getIsPro()
       ads.tsx               # バナー（Proなら表示しない）
       analytics.ts          # PostHogのイベント送信
       haptics.ts
@@ -129,7 +129,7 @@ counter-plus/
 
 ## 課金・広告・計測
 
-Proかどうかは `useIsPro()` の1か所で判定し、広告の表示と機能の解放はすべてこれを見る。
+Proかどうかは `useIsPro()` / `getIsPro()`（`src/lib/purchases.ts`）で判定し、広告の表示と機能の解放はすべてこれを見る。
 
 **課金（RevenueCat）**
 
@@ -154,7 +154,7 @@ Proかどうかは `useIsPro()` の1か所で判定し、広告の表示と機�
 | app_open | 継続して使われているか |
 | counter_created / category_created | どれくらいの規模で使うか |
 | count_tapped | カウントされているか（回数だけ。毎回は送らずまとめて送る） |
-| pro_gate_shown | どのPro機能で購入画面が出たか |
+| pro_gate_shown | どのPro機能で購入画面が出たか（`from` は csv / history / category / sort / ads。設定からの自主オープンは送らない） |
 | purchase_completed | どこから買われたか |
 | csv_exported | 棚卸し用途で使われているか |
 
