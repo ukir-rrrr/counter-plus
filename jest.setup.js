@@ -66,10 +66,15 @@ jest.mock('expo-audio', () => ({
     seekTo: jest.fn(() => Promise.resolve()),
     replace: jest.fn(),
     remove: jest.fn(),
+    playing: false,
+    isLoaded: true,
+    currentTime: 0,
     currentStatus: { playing: false, didJustFinish: false, currentTime: 0, isLoaded: true },
     addListener: jest.fn(() => ({ remove: jest.fn() })),
   })),
   setAudioModeAsync: jest.fn(async () => {}),
+  setIsAudioActiveAsync: jest.fn(async () => {}),
+  preload: jest.fn(async () => {}),
 }));
 
 // drizzle-orm/expo-sqlite をモック

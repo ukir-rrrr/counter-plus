@@ -45,6 +45,7 @@ describe('SettingsScreen', () => {
       await Promise.resolve();
     });
 
+    expect(getByTestId('settings-sound-debug')).toBeTruthy();
     expect(getByTestId('settings-toggle-haptics')).toBeTruthy();
     expect(getByTestId('settings-toggle-sound')).toBeTruthy();
     expect(getByTestId('settings-toggle-keep-awake')).toBeTruthy();

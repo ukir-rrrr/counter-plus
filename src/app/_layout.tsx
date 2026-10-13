@@ -19,6 +19,7 @@ import { db } from '@/db/client';
 import migrations from '@/db/migrations/migrations';
 import { ensureDefaultCategory } from '@/features/categories/repository';
 import { useSettingsStore } from '@/features/settings/store';
+import { preloadTapSound } from '@/lib/sound';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -63,6 +64,10 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
+  }, [ready]);
+
+  useEffect(() => {
+    if (ready) preloadTapSound();
   }, [ready]);
 
   if (error) {

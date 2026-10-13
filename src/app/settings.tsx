@@ -7,6 +7,7 @@ import { SettingsHeader } from '@/features/settings/components/SettingsHeader';
 import { SettingsLinkRow } from '@/features/settings/components/SettingsLinkRow';
 import { SettingsSection } from '@/features/settings/components/SettingsSection';
 import { SettingsToggle } from '@/features/settings/components/SettingsToggle';
+import { TapSoundDebugPanel } from '@/features/settings/components/TapSoundDebugPanel';
 import { useSettingsStore } from '@/features/settings/store';
 import { getAppVersion } from '@/features/settings/version';
 import { tapHaptic } from '@/lib/haptics';
@@ -43,6 +44,7 @@ export default function SettingsScreen() {
             {error}
           </Text>
         ) : null}
+        {__DEV__ ? <TapSoundDebugPanel /> : null}
         {/* Pro案内と実リンクはステップ7・9。ここでは出さない */}
         <SettingsSection title="カウント">
           <SettingsToggle
