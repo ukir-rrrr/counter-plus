@@ -519,7 +519,6 @@ export function openPaywall(openedFrom: PaywallOpenedFrom = 'settings'): void {
   } catch (e) {
     releaseNavLock();
     console.warn('購入画面を開けませんでした', e);
-    throw e;
   }
 }
 

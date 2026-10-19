@@ -155,13 +155,13 @@ describe('purchases 純粋ロジック', () => {
     expect(router.push).toHaveBeenCalledWith({ pathname: '/paywall', params: { openedFrom: 'settings' } });
   });
 
-  it('遷移に失敗したらロックを戻して投げ直す', () => {
+  it('遷移に失敗したらロックを戻して記録し、例外は握る', () => {
     resetPurchasesForTests();
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
     (router.push as jest.Mock).mockImplementationOnce(() => {
       throw new Error('nav fail');
     });
-    expect(() => openPaywall('settings')).toThrow('nav fail');
+    expect(() => openPaywall('settings')).not.toThrow();
     expect(warn).toHaveBeenCalledWith('購入画面を開けませんでした', expect.any(Error));
     (router.push as jest.Mock).mockClear();
     openPaywall('csv');
