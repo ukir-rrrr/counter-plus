@@ -4,8 +4,9 @@
 const TEST_ADMOB_IOS_APP_ID = 'ca-app-pub-3940256099942544~1458002511';
 const TEST_ADMOB_ANDROID_APP_ID = 'ca-app-pub-3940256099942544~3347511713';
 
-/** Google のテスト広告に共通するパブリッシャー番号 */
-const GOOGLE_SAMPLE_PUBLISHER = '3940256099942544';
+// 判定の実体は config/googleSampleAdId.js（実行時の src/lib/ads.tsx と同じ）
+const { GOOGLE_SAMPLE_AD_PUBLISHER, isGoogleSampleAdId } = require('./googleSampleAdId');
+const GOOGLE_SAMPLE_PUBLISHER = GOOGLE_SAMPLE_AD_PUBLISHER;
 
 /** Info.plist の NSUserTrackingUsageDescription。日本語で用途を説明する */
 const ATT_USAGE_DESCRIPTION =
@@ -14,10 +15,6 @@ const ATT_USAGE_DESCRIPTION =
 function envValue(name, env = process.env) {
   const value = env[name]?.trim();
   return value ? value : null;
-}
-
-function isGoogleSampleAdId(id) {
-  return typeof id === 'string' && id.includes(GOOGLE_SAMPLE_PUBLISHER);
 }
 
 function isProductionBuildProfile(env = process.env) {

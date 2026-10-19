@@ -7,11 +7,18 @@ import { getIsPro, useIsPro } from '@/lib/purchases';
 /** ホームが表示されてから ATT を出すまでの待ち時間。スプラッシュ中には出さない */
 export const ATT_AFTER_HOME_MS = 1500;
 
+// app.config（config/admobNativeIds.js）と同じ判定。実装は config/googleSampleAdId.js
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const googleSampleAdId = require('../../config/googleSampleAdId.js') as {
+  GOOGLE_SAMPLE_AD_PUBLISHER: string;
+  isGoogleSampleAdId: (id: unknown) => boolean;
+};
+
 /** Google 公式サンプル広告のパブリッシャー番号。本番ではこのIDを出さない */
-export const GOOGLE_SAMPLE_AD_PUBLISHER = '3940256099942544';
+export const GOOGLE_SAMPLE_AD_PUBLISHER = googleSampleAdId.GOOGLE_SAMPLE_AD_PUBLISHER;
 
 export function isGoogleSampleAdId(id: string): boolean {
-  return id.includes(GOOGLE_SAMPLE_AD_PUBLISHER);
+  return googleSampleAdId.isGoogleSampleAdId(id);
 }
 
 export type UnavailableReason = 'no_native' | 'no_key' | 'expo_go';

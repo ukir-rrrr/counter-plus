@@ -49,12 +49,11 @@ export function contactMailtoUrl(email: string | null | undefined): string {
 }
 
 /** 設定・購入画面から開く外部リンク。空なら unavailable */
-export function getSupportUrls(
-  env: Record<string, string | undefined> = process.env,
-): Record<SupportId, string> {
+export function getSupportUrls(): Record<SupportId, string> {
+  // Metro が本番バンドルで値を埋め込むので、process.env.EXPO_PUBLIC_* を直接書く
   return {
-    review: appStoreReviewUrl(env.EXPO_PUBLIC_APP_STORE_ID),
-    contact: contactMailtoUrl(env.EXPO_PUBLIC_SUPPORT_EMAIL),
+    review: appStoreReviewUrl(process.env.EXPO_PUBLIC_APP_STORE_ID),
+    contact: contactMailtoUrl(process.env.EXPO_PUBLIC_SUPPORT_EMAIL),
     terms: '',
     privacy: '',
   };

@@ -1,16 +1,11 @@
 /** 設定画面に出す短縮コミット。EAS の環境変数か git。取れなければ unknown */
 
-const UNKNOWN = 'unknown';
-
-function normalizeGitHash(raw) {
-  const trimmed = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
-  if (!/^[0-9a-f]{4,40}$/.test(trimmed)) return UNKNOWN;
-  return trimmed.slice(0, 7);
-}
+// 正規化の実体は config/normalizeGitHash.js（実行時の src/features/settings/version.ts と同じ）
+const { UNKNOWN_GIT_HASH, normalizeGitHash } = require('./normalizeGitHash');
 
 function readGitCommitHash(env = process.env, execSyncImpl) {
   const fromEas = normalizeGitHash(env.EAS_BUILD_GIT_COMMIT_HASH);
-  if (fromEas !== UNKNOWN) return fromEas;
+  if (fromEas !== UNKNOWN_GIT_HASH) return fromEas;
 
   try {
     const execSync =
@@ -24,12 +19,12 @@ function readGitCommitHash(env = process.env, execSyncImpl) {
     });
     return normalizeGitHash(stdout);
   } catch {
-    return UNKNOWN;
+    return UNKNOWN_GIT_HASH;
   }
 }
 
 module.exports = {
-  UNKNOWN_GIT_HASH: UNKNOWN,
+  UNKNOWN_GIT_HASH,
   normalizeGitHash,
   readGitCommitHash,
 };

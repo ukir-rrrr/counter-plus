@@ -44,4 +44,16 @@ describe('法務ドキュメント', () => {
       expect(privacyMd).toContain(section.heading);
     }
   });
+
+  it('公開前に埋める運営者情報のプレースホルダーがある', () => {
+    const terms = `${TERMS_OF_SERVICE.intro}\n${TERMS_OF_SERVICE.sections.map((s) => s.body).join('\n')}`;
+    const privacy = `${PRIVACY_POLICY.intro}\n${PRIVACY_POLICY.sections.map((s) => s.body).join('\n')}`;
+    expect(terms).toContain('{{運営者名}}');
+    expect(terms).toContain('{{所在地}}');
+    expect(privacy).toContain('{{運営者名}}');
+    expect(privacy).toContain('{{所在地}}');
+    expect(privacy).toContain('{{連絡先メール}}');
+    expect(readDoc('terms.md')).toContain('{{運営者名}}');
+    expect(readDoc('privacy.md')).toContain('{{連絡先メール}}');
+  });
 });

@@ -1,6 +1,13 @@
 import Constants from 'expo-constants';
 
-export const UNKNOWN_GIT_HASH = 'unknown';
+// app.config（config/gitCommitHash.js）と同じ正規化。実装は config/normalizeGitHash.js
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const gitHashUtil = require('../../../config/normalizeGitHash.js') as {
+  UNKNOWN_GIT_HASH: string;
+  normalizeGitHash: (raw: unknown) => string;
+};
+
+export const UNKNOWN_GIT_HASH = gitHashUtil.UNKNOWN_GIT_HASH;
 
 type ExtraWithGit = { gitCommitHash?: unknown };
 
@@ -12,9 +19,7 @@ export function getAppVersion(version: string | null | undefined = Constants.exp
 
 /** 7桁の git ハッシュ。空・不正は unknown。クラッシュさせない */
 export function normalizeGitHash(raw: string | null | undefined): string {
-  const trimmed = raw?.trim().toLowerCase() ?? '';
-  if (!/^[0-9a-f]{4,40}$/.test(trimmed)) return UNKNOWN_GIT_HASH;
-  return trimmed.slice(0, 7);
+  return gitHashUtil.normalizeGitHash(raw);
 }
 
 function extraGitHash(): string | undefined {

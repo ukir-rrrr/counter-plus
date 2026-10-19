@@ -18,6 +18,7 @@ App Store Connect は **https で誰でも開けるプライバシーポリシ�
 1. `docs/legal/privacy.md` と `docs/legal/terms.md` を、GitHub Pages / 公開Notion / 自分のサイトなどにそのまま掲載する
 2. 掲載URLを控える（例: `https://example.com/counter-plus/privacy`）
 3. アプリ内の文面と食い違わないようにする。直すときは `src/features/legal/content.ts` と `docs/legal/` を同じ内容にする
+4. 公開前に、本文のプレースホルダー（`{{運営者名}}` / `{{連絡先メール}}` / `{{所在地}}`）を、運営者名、連絡先メール、所在地（または管轄の表記）に置き換える。設定の「お問い合わせ」を使うなら `EXPO_PUBLIC_SUPPORT_EMAIL` も入れる。実在の個人情報をリポジトリへ載せる前に、公開してよいか確認する
 
 ## 2. EAS の環境変数を入れる
 

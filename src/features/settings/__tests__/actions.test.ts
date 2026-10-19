@@ -6,6 +6,7 @@ import {
   type PurchasesClient,
 } from '@/lib/purchases';
 
+import { withPublicEnv } from '@/lib/__tests__/withPublicEnv';
 import { NAV_LOCK_MS, setNavLockNowForTests } from '@/lib/navLock';
 
 import {
@@ -216,11 +217,14 @@ describe('サポートURLの組み立て', () => {
     expect(contactMailtoUrl('hello@example.com')).toBe(
       'mailto:hello@example.com?subject=%E3%82%AB%E3%82%A6%E3%83%B3%E3%82%BF%E3%83%BC%EF%BC%8B%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6%E3%81%AE%E5%95%8F%E3%81%84%E5%90%88%E3%82%8F%E3%81%9B',
     );
-    expect(getSupportUrls({ EXPO_PUBLIC_APP_STORE_ID: '42', EXPO_PUBLIC_SUPPORT_EMAIL: 'a@b.c' })).toEqual({
-      review: 'https://apps.apple.com/app/id42?action=write-review',
-      contact: 'mailto:a@b.c?subject=%E3%82%AB%E3%82%A6%E3%83%B3%E3%82%BF%E3%83%BC%EF%BC%8B%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6%E3%81%AE%E5%95%8F%E3%81%84%E5%90%88%E3%82%8F%E3%81%9B',
-      terms: '',
-      privacy: '',
+    withPublicEnv({ EXPO_PUBLIC_APP_STORE_ID: '42', EXPO_PUBLIC_SUPPORT_EMAIL: 'a@b.c' }, () => {
+      expect(getSupportUrls()).toEqual({
+        review: 'https://apps.apple.com/app/id42?action=write-review',
+        contact:
+          'mailto:a@b.c?subject=%E3%82%AB%E3%82%A6%E3%83%B3%E3%82%BF%E3%83%BC%EF%BC%8B%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6%E3%81%AE%E5%95%8F%E3%81%84%E5%90%88%E3%82%8F%E3%81%9B',
+        terms: '',
+        privacy: '',
+      });
     });
   });
 
@@ -231,6 +235,9 @@ describe('サポートURLの組み立て', () => {
     expect(contactMailtoUrl('')).toBe('');
     expect(contactMailtoUrl('not-an-email')).toBe('');
     expect(contactMailtoUrl('a @b.c')).toBe('');
+    withPublicEnv({ EXPO_PUBLIC_APP_STORE_ID: undefined, EXPO_PUBLIC_SUPPORT_EMAIL: undefined }, () => {
+      expect(getSupportUrls()).toEqual({ review: '', contact: '', terms: '', privacy: '' });
+    });
   });
 });
 

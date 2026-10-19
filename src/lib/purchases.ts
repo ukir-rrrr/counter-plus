@@ -516,8 +516,10 @@ export function openPaywall(openedFrom: PaywallOpenedFrom = 'settings'): void {
       require('@/lib/analytics').capture('pro_gate_shown', { from: openedFrom });
     }
     getRouter().push({ pathname: '/paywall', params: { openedFrom } });
-  } catch {
+  } catch (e) {
     releaseNavLock();
+    console.warn('購入画面を開けませんでした', e);
+    throw e;
   }
 }
 
