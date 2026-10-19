@@ -6,6 +6,8 @@ import {
   type PurchasesClient,
 } from '@/lib/purchases';
 
+import { NAV_LOCK_MS, setNavLockNowForTests } from '@/lib/navLock';
+
 import {
   appStoreReviewUrl,
   contactMailtoUrl,
@@ -237,16 +239,18 @@ describe('openLegalScreen', () => {
     resetSettingsActionLocksForTests();
   });
 
-  it('通常：利用規約とプライバシーのアプリ内画面へ進む', async () => {
+  it('通常：利用規約とプライバシーのアプリ内画面へ進む', () => {
+    let t = 5_000_000;
+    setNavLockNowForTests(() => t);
     const navigate = jest.fn();
     expect(openLegalScreen('terms', navigate)).toEqual({ ok: true });
     expect(navigate).toHaveBeenCalledWith('/legal/terms');
-    await Promise.resolve();
+    t += NAV_LOCK_MS;
     expect(openLegalScreen('privacy', navigate)).toEqual({ ok: true });
     expect(navigate).toHaveBeenCalledWith('/legal/privacy');
   });
 
-  it('エラー：navigate が投げたら error', () => {
+  it('エラー：navigate が投げたら error。ロックは戻す', () => {
     const navigate = jest.fn(() => {
       throw new Error('nav fail');
     });
@@ -255,6 +259,7 @@ describe('openLegalScreen', () => {
       reason: 'error',
       message: 'nav fail',
     });
+    expect(openLegalScreen('privacy', jest.fn())).toEqual({ ok: true });
   });
 
   it('連打：同時の2回目は busy で、遷移は1回', () => {
@@ -263,6 +268,14 @@ describe('openLegalScreen', () => {
     const extras = [openLegalScreen('terms', navigate), openLegalScreen('privacy', navigate)];
     expect(first).toEqual({ ok: true });
     expect(extras.every((r) => r.ok === false && r.reason === 'busy')).toBe(true);
+    expect(navigate).toHaveBeenCalledTimes(1);
+  });
+
+  it('連打：microtask のあとでも同じ画面は重ねない', async () => {
+    const navigate = jest.fn();
+    expect(openLegalScreen('privacy', navigate)).toEqual({ ok: true });
+    await Promise.resolve();
+    expect(openLegalScreen('privacy', navigate)).toEqual({ ok: false, reason: 'busy' });
     expect(navigate).toHaveBeenCalledTimes(1);
   });
 });

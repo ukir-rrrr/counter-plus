@@ -144,6 +144,16 @@ describe('purchases 純粋ロジック', () => {
     expect(destinationAfterPurchase('csv')).toBe('/export');
     expect(destinationAfterPurchase('settings')).toBeNull();
   });
+
+  it('連打：購入画面は1回だけ開く', () => {
+    resetPurchasesForTests();
+    (router.push as jest.Mock).mockClear();
+    openPaywall('settings');
+    openPaywall('settings');
+    openPaywall('csv');
+    expect(router.push).toHaveBeenCalledTimes(1);
+    expect(router.push).toHaveBeenCalledWith({ pathname: '/paywall', params: { openedFrom: 'settings' } });
+  });
 });
 
 describe('purchases ストア', () => {
@@ -365,6 +375,7 @@ describe('purchases ストア', () => {
     await expect(requireProOrOpenPaywall('history')).resolves.toBe(true);
     expect(router.push).not.toHaveBeenCalled();
 
+    resetPurchasesForTests();
     openPaywall('csv');
     expect(router.push).toHaveBeenCalledWith({ pathname: '/paywall', params: { openedFrom: 'csv' } });
   });

@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 
 import { legalRoute, type LegalDocument } from '@/features/legal/content';
+import { releaseNavLock, resetNavLockForTests, tryAcquireNavLock } from '@/lib/navLock';
 import { restorePurchases as restorePurchasesSdk } from '@/lib/purchases';
 
 export type SettingsActionReason = 'busy' | 'cancelled' | 'unavailable' | 'error';
@@ -92,6 +93,7 @@ export function setRestorePurchasesImplForTests(impl: RestoreImpl | null): void 
 export function resetSettingsActionLocksForTests(): void {
   restoreInFlight = false;
   supportInFlight = false;
+  resetNavLockForTests();
 }
 
 export function isRestoreInFlight(): boolean {
@@ -161,27 +163,24 @@ const defaultLegalNavigate: LegalNavigator = (href) => {
 
 /**
  * 利用規約・プライバシーポリシーのアプリ内画面を開く。
- * 連打されても同時に1回だけ遷移する。
+ * 遷移アニメ中の連打では同じ画面を重ねない（microtask では短すぎる）。
  */
 export function openLegalScreen(
   id: LegalDocument['id'],
   navigate: LegalNavigator = defaultLegalNavigate,
 ): SettingsActionResult {
-  if (supportInFlight) return { ok: false, reason: 'busy' };
-  supportInFlight = true;
+  if (supportInFlight || !tryAcquireNavLock()) {
+    return { ok: false, reason: 'busy' };
+  }
   try {
     navigate(legalRoute(id));
     return { ok: true };
   } catch (e: unknown) {
+    releaseNavLock();
     return {
       ok: false,
       reason: 'error',
       message: e instanceof Error ? e.message : '開けませんでした',
     };
-  } finally {
-    // 同期の連打を落とす。次のタスクでロックを戻す
-    queueMicrotask(() => {
-      supportInFlight = false;
-    });
   }
 }

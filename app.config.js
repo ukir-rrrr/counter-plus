@@ -4,6 +4,7 @@ const {
   ATT_USAGE_DESCRIPTION,
   resolveAdMobAppId,
 } = require('./config/admobNativeIds');
+const { readGitCommitHash } = require('./config/gitCommitHash');
 
 function pluginName(plugin) {
   return Array.isArray(plugin) ? plugin[0] : plugin;
@@ -33,5 +34,9 @@ module.exports = () => {
   return {
     ...appJson.expo,
     plugins,
+    extra: {
+      ...(appJson.expo.extra ?? {}),
+      gitCommitHash: readGitCommitHash(),
+    },
   };
 };

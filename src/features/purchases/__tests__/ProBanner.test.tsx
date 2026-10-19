@@ -21,6 +21,9 @@ describe('ProBanner', () => {
       'Proにする（買い切り ¥800）',
     );
     fireEvent.press(view.getByTestId('settings-pro-banner'));
+    fireEvent.press(view.getByTestId('settings-pro-banner'));
+    fireEvent.press(view.getByTestId('settings-pro-banner'));
+    expect(router.push).toHaveBeenCalledTimes(1);
     expect(router.push).toHaveBeenCalledWith({ pathname: '/paywall', params: { openedFrom: 'settings' } });
 
     usePurchasesStore.setState({ priceString: null });

@@ -16,6 +16,7 @@ import {
 } from '@/lib/purchases';
 
 import { resetSettingsActionLocksForTests } from '@/features/settings/actions';
+import { NAV_LOCK_MS, setNavLockNowForTests } from '@/lib/navLock';
 
 import { PAYWALL_MIN_TOP_INSET, PAYWALL_TITLE_STYLE } from '../paywallLayout';
 
@@ -214,6 +215,8 @@ describe('PaywallView', () => {
   });
 
   it('通常・連打：利用規約とプライバシーはアプリ内画面へ', async () => {
+    let t = 6_000_000;
+    setNavLockNowForTests(() => t);
     const { getByTestId, unmount } = await render(<PaywallView openedFrom="settings" />);
     fireEvent.press(getByTestId('paywall-terms'));
     fireEvent.press(getByTestId('paywall-terms'));
@@ -223,8 +226,13 @@ describe('PaywallView', () => {
     await act(async () => {
       await Promise.resolve();
     });
+    fireEvent.press(getByTestId('paywall-terms'));
+    expect(mockRouterPush).toHaveBeenCalledTimes(1);
+
+    t += NAV_LOCK_MS;
     fireEvent.press(getByTestId('paywall-privacy'));
     expect(mockRouterPush).toHaveBeenCalledWith('/legal/privacy');
+    expect(mockRouterPush).toHaveBeenCalledTimes(2);
     await unmount();
   });
 });

@@ -3,6 +3,7 @@ import { Alert } from 'react-native';
 
 import SettingsScreen from '@/app/settings';
 
+import { NAV_LOCK_MS, setNavLockNowForTests } from '@/lib/navLock';
 import { resetPurchasesForTests, usePurchasesStore } from '@/lib/purchases';
 
 import {
@@ -72,6 +73,7 @@ describe('SettingsScreen', () => {
     expect(getByTestId('settings-terms')).toBeTruthy();
     expect(getByTestId('settings-privacy')).toBeTruthy();
     expect(getByTestId('settings-version').props.children).toBe('カウンター＋ バージョン 1.0.0');
+    expect(getByTestId('settings-build').props.children).toBe('ビルド unknown');
     expect(getByTestId('settings-pro-banner')).toBeTruthy();
     expect(queryByText('設定を保存できませんでした')).toBeNull();
   });
@@ -101,6 +103,8 @@ describe('SettingsScreen', () => {
   });
 
   it('連打：規約はアプリ内画面へ1回だけ進む', async () => {
+    let t = 4_000_000;
+    setNavLockNowForTests(() => t);
     const { getByTestId } = await render(<SettingsScreen />);
     await act(async () => {
       fireEvent.press(getByTestId('settings-privacy'));
@@ -113,9 +117,16 @@ describe('SettingsScreen', () => {
       await Promise.resolve();
     });
     await act(async () => {
+      fireEvent.press(getByTestId('settings-privacy'));
+    });
+    expect(mockRouterPush).toHaveBeenCalledTimes(1);
+
+    t += NAV_LOCK_MS;
+    await act(async () => {
       fireEvent.press(getByTestId('settings-terms'));
     });
     expect(mockRouterPush).toHaveBeenCalledWith('/legal/terms');
+    expect(mockRouterPush).toHaveBeenCalledTimes(2);
   });
 
   it('空：レビューIDが無いと設定不足の案内を出す', async () => {
