@@ -144,6 +144,30 @@ describe('purchases 純粋ロジック', () => {
     expect(destinationAfterPurchase('csv')).toBe('/export');
     expect(destinationAfterPurchase('settings')).toBeNull();
   });
+
+  it('連打：購入画面は1回だけ開く', () => {
+    resetPurchasesForTests();
+    (router.push as jest.Mock).mockClear();
+    openPaywall('settings');
+    openPaywall('settings');
+    openPaywall('csv');
+    expect(router.push).toHaveBeenCalledTimes(1);
+    expect(router.push).toHaveBeenCalledWith({ pathname: '/paywall', params: { openedFrom: 'settings' } });
+  });
+
+  it('遷移に失敗したらロックを戻して記録し、例外は握る', () => {
+    resetPurchasesForTests();
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    (router.push as jest.Mock).mockImplementationOnce(() => {
+      throw new Error('nav fail');
+    });
+    expect(() => openPaywall('settings')).not.toThrow();
+    expect(warn).toHaveBeenCalledWith('購入画面を開けませんでした', expect.any(Error));
+    (router.push as jest.Mock).mockClear();
+    openPaywall('csv');
+    expect(router.push).toHaveBeenCalledWith({ pathname: '/paywall', params: { openedFrom: 'csv' } });
+    warn.mockRestore();
+  });
 });
 
 describe('purchases ストア', () => {
@@ -365,6 +389,7 @@ describe('purchases ストア', () => {
     await expect(requireProOrOpenPaywall('history')).resolves.toBe(true);
     expect(router.push).not.toHaveBeenCalled();
 
+    resetPurchasesForTests();
     openPaywall('csv');
     expect(router.push).toHaveBeenCalledWith({ pathname: '/paywall', params: { openedFrom: 'csv' } });
   });

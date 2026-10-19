@@ -1,6 +1,7 @@
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 
+import { resetNavLockForTests } from '@/lib/navLock';
 import { resetPurchasesForTests, usePurchasesStore } from '@/lib/purchases';
 
 import { Toolbar } from '../components/Toolbar';
@@ -30,6 +31,7 @@ describe('Toolbar Pro gate', () => {
       expect(router.push).toHaveBeenCalledWith({ pathname: '/paywall', params: { openedFrom: 'history' } });
     });
     (router.push as jest.Mock).mockClear();
+    resetNavLockForTests();
     fireEvent.press(view.getByTestId('toolbar-export'));
     await waitFor(() => {
       expect(router.push).toHaveBeenCalledWith({ pathname: '/paywall', params: { openedFrom: 'csv' } });

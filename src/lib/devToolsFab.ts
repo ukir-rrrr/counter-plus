@@ -1,8 +1,8 @@
 import { usePathname } from 'expo-router';
 import { useEffect } from 'react';
 
-/** 購入画面・編集シートなど、フルスクリーン／モーダル中は開発用歯車を隠す */
-const HIDDEN_PATH_PREFIXES = ['/paywall', '/counter/'];
+/** 購入画面・編集シート・規約など、フルスクリーン／モーダル中は開発用歯車を隠す */
+const HIDDEN_PATH_PREFIXES = ['/paywall', '/counter/', '/legal'];
 
 export function shouldHideDevToolsFab(pathname: string): boolean {
   return HIDDEN_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(prefix));

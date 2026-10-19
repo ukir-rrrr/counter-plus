@@ -1,6 +1,9 @@
 import * as Linking from 'expo-linking';
+import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 
+import { legalRoute, type LegalDocument } from '@/features/legal/content';
+import { releaseNavLock, resetNavLockForTests, tryAcquireNavLock } from '@/lib/navLock';
 import { restorePurchases as restorePurchasesSdk } from '@/lib/purchases';
 
 export type SettingsActionReason = 'busy' | 'cancelled' | 'unavailable' | 'error';
@@ -16,15 +19,12 @@ export type SupportOpener = {
   openBrowser: (url: string) => Promise<void>;
 };
 
-/** ステップ7・9で埋める。空なら「準備中」を出す */
-export const supportUrls: Record<SupportId, string> = {
-  review: '',
-  contact: '',
-  terms: '',
-  privacy: '',
-};
+export type LegalNavigator = (href: '/legal/terms' | '/legal/privacy') => void;
 
-export const UNAVAILABLE_MESSAGE = 'この機能は準備中です。';
+export const UNAVAILABLE_MESSAGE = 'リンクを開けませんでした。';
+export const REVIEW_UNAVAILABLE_MESSAGE =
+  'App Storeのリンクは、公開用のアプリIDを設定するとここから開けます。';
+export const CONTACT_UNAVAILABLE_MESSAGE = 'お問い合わせ先のメールがまだ設定されていません。';
 export const RESTORE_UNAVAILABLE_MESSAGE = '開発ビルドでのみ利用できます';
 
 export const defaultSupportOpener: SupportOpener = {
@@ -35,6 +35,35 @@ export const defaultSupportOpener: SupportOpener = {
     await WebBrowser.openBrowserAsync(url);
   },
 };
+
+export function appStoreReviewUrl(appStoreId: string | null | undefined): string {
+  const id = appStoreId?.trim() ?? '';
+  if (!/^\d+$/.test(id)) return '';
+  return `https://apps.apple.com/app/id${id}?action=write-review`;
+}
+
+export function contactMailtoUrl(email: string | null | undefined): string {
+  const trimmed = email?.trim() ?? '';
+  if (!trimmed.includes('@') || trimmed.includes(' ')) return '';
+  return `mailto:${trimmed}?subject=${encodeURIComponent('カウンター＋についての問い合わせ')}`;
+}
+
+/** 設定・購入画面から開く外部リンク。空なら unavailable */
+export function getSupportUrls(): Record<SupportId, string> {
+  // Metro が本番バンドルで値を埋め込むので、process.env.EXPO_PUBLIC_* を直接書く
+  return {
+    review: appStoreReviewUrl(process.env.EXPO_PUBLIC_APP_STORE_ID),
+    contact: contactMailtoUrl(process.env.EXPO_PUBLIC_SUPPORT_EMAIL),
+    terms: '',
+    privacy: '',
+  };
+}
+
+function unavailableMessage(id: SupportId): string {
+  if (id === 'review') return REVIEW_UNAVAILABLE_MESSAGE;
+  if (id === 'contact') return CONTACT_UNAVAILABLE_MESSAGE;
+  return UNAVAILABLE_MESSAGE;
+}
 
 type RestoreImpl = () => Promise<SettingsActionResult>;
 
@@ -63,6 +92,7 @@ export function setRestorePurchasesImplForTests(impl: RestoreImpl | null): void 
 export function resetSettingsActionLocksForTests(): void {
   restoreInFlight = false;
   supportInFlight = false;
+  resetNavLockForTests();
 }
 
 export function isRestoreInFlight(): boolean {
@@ -94,20 +124,20 @@ export async function restorePurchases(): Promise<SettingsActionResult> {
 }
 
 /**
- * サポートリンクを開く。URLが空なら unavailable。
+ * サポートの外部リンクを開く。URLが空なら unavailable。
  * 連打されても同時に1回だけ実行する。
  */
 export async function openSupportLink(
   id: SupportId,
   opener: SupportOpener = defaultSupportOpener,
-  urls: Record<SupportId, string> = supportUrls,
+  urls: Record<SupportId, string> = getSupportUrls(),
 ): Promise<SettingsActionResult> {
   if (supportInFlight) return { ok: false, reason: 'busy' };
   supportInFlight = true;
   try {
     const url = urls[id]?.trim() ?? '';
     if (!url) {
-      return { ok: false, reason: 'unavailable', message: UNAVAILABLE_MESSAGE };
+      return { ok: false, reason: 'unavailable', message: unavailableMessage(id) };
     }
     if (id === 'contact') {
       await opener.openExternal(url);
@@ -123,5 +153,33 @@ export async function openSupportLink(
     };
   } finally {
     supportInFlight = false;
+  }
+}
+
+const defaultLegalNavigate: LegalNavigator = (href) => {
+  router.push(href);
+};
+
+/**
+ * 利用規約・プライバシーポリシーのアプリ内画面を開く。
+ * 遷移アニメ中の連打では同じ画面を重ねない（microtask では短すぎる）。
+ */
+export function openLegalScreen(
+  id: LegalDocument['id'],
+  navigate: LegalNavigator = defaultLegalNavigate,
+): SettingsActionResult {
+  if (supportInFlight || !tryAcquireNavLock()) {
+    return { ok: false, reason: 'busy' };
+  }
+  try {
+    navigate(legalRoute(id));
+    return { ok: true };
+  } catch (e: unknown) {
+    releaseNavLock();
+    return {
+      ok: false,
+      reason: 'error',
+      message: e instanceof Error ? e.message : '開けませんでした',
+    };
   }
 }

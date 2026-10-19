@@ -7,11 +7,19 @@ import { getIsPro, useIsPro } from '@/lib/purchases';
 /** ホームが表示されてから ATT を出すまでの待ち時間。スプラッシュ中には出さない */
 export const ATT_AFTER_HOME_MS = 1500;
 
-/** Google 公式のアダプティブバナー用テストユニットID */
-export const TEST_BANNER_UNIT_IDS = {
-  ios: 'ca-app-pub-3940256099942544/2435281174',
-  android: 'ca-app-pub-3940256099942544/9214589741',
-} as const;
+// app.config（config/admobNativeIds.js）と同じ判定。実装は config/googleSampleAdId.js
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const googleSampleAdId = require('../../config/googleSampleAdId.js') as {
+  GOOGLE_SAMPLE_AD_PUBLISHER: string;
+  isGoogleSampleAdId: (id: unknown) => boolean;
+};
+
+/** Google 公式サンプル広告のパブリッシャー番号。本番ではこのIDを出さない */
+export const GOOGLE_SAMPLE_AD_PUBLISHER = googleSampleAdId.GOOGLE_SAMPLE_AD_PUBLISHER;
+
+export function isGoogleSampleAdId(id: string): boolean {
+  return googleSampleAdId.isGoogleSampleAdId(id);
+}
 
 export type UnavailableReason = 'no_native' | 'no_key' | 'expo_go';
 
@@ -106,12 +114,22 @@ function hasNativeAdsModule(): boolean {
   }
 }
 
+function googleSampleBannerUnitId(os: string): string | null {
+  // 文字列リテラルは __DEV__ 分岐の内側だけに置き、本番バンドルから除く
+  if (__DEV__) {
+    return os === 'android'
+      ? `ca-app-pub-${GOOGLE_SAMPLE_AD_PUBLISHER}/9214589741`
+      : `ca-app-pub-${GOOGLE_SAMPLE_AD_PUBLISHER}/2435281174`;
+  }
+  return null;
+}
+
 export function getBannerUnitId(
   os: string = Platform.OS,
-  isDev: boolean = typeof __DEV__ !== 'undefined' ? __DEV__ : true,
+  isDev: boolean = typeof __DEV__ !== 'undefined' ? __DEV__ : false,
 ): string | null {
   if (isDev) {
-    return os === 'android' ? TEST_BANNER_UNIT_IDS.android : TEST_BANNER_UNIT_IDS.ios;
+    return googleSampleBannerUnitId(os);
   }
   // Metro が本番バンドルで値を埋め込むので、process.env.EXPO_PUBLIC_* を直接書く
   const raw =
@@ -119,7 +137,9 @@ export function getBannerUnitId(
       ? process.env.EXPO_PUBLIC_ADMOB_IOS_BANNER_UNIT_ID
       : process.env.EXPO_PUBLIC_ADMOB_ANDROID_BANNER_UNIT_ID;
   const id = raw?.trim() ?? '';
-  return id.length > 0 ? id : null;
+  if (id.length === 0) return null;
+  if (isGoogleSampleAdId(id)) return null;
+  return id;
 }
 
 export function inspectAdsAvailability(

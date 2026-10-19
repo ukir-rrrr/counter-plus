@@ -3,19 +3,24 @@ import { Alert, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ProBanner } from '@/features/purchases/components/ProBanner';
-import { openSupportLink, restorePurchases, type SettingsActionResult } from '@/features/settings/actions';
+import {
+  openLegalScreen,
+  openSupportLink,
+  restorePurchases,
+  type SettingsActionResult,
+} from '@/features/settings/actions';
 import { SettingsHeader } from '@/features/settings/components/SettingsHeader';
 import { SettingsLinkRow } from '@/features/settings/components/SettingsLinkRow';
 import { SettingsSection } from '@/features/settings/components/SettingsSection';
 import { SettingsToggle } from '@/features/settings/components/SettingsToggle';
 import { useSettingsStore } from '@/features/settings/store';
-import { getAppVersion } from '@/features/settings/version';
+import { getAppVersion, getGitCommitHash } from '@/features/settings/version';
 import { tapHaptic } from '@/lib/haptics';
 import { RESTORE_NONE_MESSAGE, RESTORE_OK_MESSAGE } from '@/lib/purchases';
 
 function showSupportResult(result: SettingsActionResult): void {
   if (result.ok || result.reason === 'busy') return;
-  Alert.alert('準備中', result.message ?? 'この機能は準備中です。');
+  Alert.alert('開けません', result.message ?? 'リンクを開けませんでした。');
 }
 
 function showRestoreResult(result: SettingsActionResult): void {
@@ -35,6 +40,7 @@ export default function SettingsScreen() {
   const setKeepAwake = useSettingsStore((s) => s.setKeepAwake);
   const error = useSettingsStore((s) => s.error);
   const version = getAppVersion();
+  const gitHash = getGitCommitHash();
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
@@ -111,7 +117,7 @@ export default function SettingsScreen() {
             label="利用規約"
             showChevron
             onPress={() => {
-              void openSupportLink('terms').then(showSupportResult);
+              showSupportResult(openLegalScreen('terms'));
             }}
           />
           <SettingsLinkRow
@@ -120,7 +126,7 @@ export default function SettingsScreen() {
             showChevron
             last
             onPress={() => {
-              void openSupportLink('privacy').then(showSupportResult);
+              showSupportResult(openLegalScreen('privacy'));
             }}
           />
         </SettingsSection>
@@ -129,6 +135,11 @@ export default function SettingsScreen() {
           testID="settings-version"
           className="px-screen pt-1 text-center font-sans text-label text-ink-subtle">
           {`カウンター＋ バージョン ${version}`}
+        </Text>
+        <Text
+          testID="settings-build"
+          className="px-screen pt-0.5 text-center font-sans text-hint text-ink-subtle">
+          {`ビルド ${gitHash}`}
         </Text>
       </ScrollView>
       <View style={{ height: insets.bottom }} />

@@ -1,5 +1,6 @@
 import { resetShareLockForTests, shareCsvFile } from '@/features/export/share';
-import { openPaywall } from '@/lib/purchases';
+import { resetNavLockForTests } from '@/lib/navLock';
+import { openPaywall, resetPurchasesForTests } from '@/lib/purchases';
 
 import {
   ANALYTICS_EVENTS,
@@ -146,10 +147,12 @@ describe('analytics 送信', () => {
     const client = mockClient();
     setAnalyticsClientForTests(client);
 
+    resetPurchasesForTests();
     openPaywall('history');
     expect(client.capture).toHaveBeenCalledWith('pro_gate_shown', { from: 'history' });
 
     (client.capture as jest.Mock).mockClear();
+    resetNavLockForTests();
     openPaywall('settings');
     expect(client.capture).not.toHaveBeenCalled();
 

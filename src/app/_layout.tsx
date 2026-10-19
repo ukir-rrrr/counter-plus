@@ -107,6 +107,8 @@ export default function RootLayout() {
             }}
           />
           <Stack.Screen name="paywall" options={{ presentation: 'modal', headerShown: false }} />
+          <Stack.Screen name="legal/terms" options={{ headerShown: false }} />
+          <Stack.Screen name="legal/privacy" options={{ headerShown: false }} />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

@@ -37,7 +37,7 @@ EXPO_PUBLIC_ADMOB_IOS_APP_ID=ca-app-pub-xxxxxxxx~yyyyyyyyyy
 EXPO_PUBLIC_ADMOB_IOS_BANNER_UNIT_ID=ca-app-pub-xxxxxxxx/zzzzzzzzzz
 ```
 
-EAS Build では [Environment variables](https://docs.expo.dev/eas/environment-variables/) に同じ名前で入れる。本番プロファイルにはテストIDを置かない。
+EAS Build では [Environment variables](https://docs.expo.dev/eas/environment-variables/) に同じ名前で入れる。`eas.json` の `environment` が development / preview / production に対応する。**production にはテストIDを置かない。** 本番プロファイルで Google サンプルの App ID（`3940256099942544`）が入っているとビルド設定が失敗する。バナーユニットIDも本番実行時はテストIDを使わない。
 
 確認すること:
 

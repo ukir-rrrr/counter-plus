@@ -15,12 +15,22 @@ import {
   type PurchasesClient,
 } from '@/lib/purchases';
 
+import { resetSettingsActionLocksForTests } from '@/features/settings/actions';
+import { NAV_LOCK_MS, setNavLockNowForTests } from '@/lib/navLock';
+
 import { PAYWALL_MIN_TOP_INSET, PAYWALL_TITLE_STYLE } from '../paywallLayout';
 
 import { PaywallView } from '../components/PaywallView';
 
+const mockRouterPush = jest.fn();
+
 jest.mock('expo-router', () => ({
-  router: { canGoBack: () => true, back: jest.fn(), replace: jest.fn(), push: jest.fn() },
+  router: {
+    canGoBack: () => true,
+    back: jest.fn(),
+    replace: jest.fn(),
+    push: (...args: unknown[]) => mockRouterPush(...args),
+  },
   Stack: { Screen: () => null },
   useLocalSearchParams: () => ({ openedFrom: 'csv' }),
   useNavigation: () => ({ canGoBack: () => true, goBack: jest.fn() }),
@@ -71,6 +81,8 @@ function mockClient(overrides: Partial<PurchasesClient> = {}): PurchasesClient {
 describe('PaywallView', () => {
   beforeEach(() => {
     resetPurchasesForTests();
+    resetSettingsActionLocksForTests();
+    mockRouterPush.mockClear();
     jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     jest.spyOn(console, 'warn').mockImplementation(() => {});
   });
@@ -199,6 +211,28 @@ describe('PaywallView', () => {
     await waitFor(() => {
       expect(getByTestId('paywall-start')).toBeTruthy();
     });
+    await unmount();
+  });
+
+  it('通常・連打：利用規約とプライバシーはアプリ内画面へ', async () => {
+    let t = 6_000_000;
+    setNavLockNowForTests(() => t);
+    const { getByTestId, unmount } = await render(<PaywallView openedFrom="settings" />);
+    fireEvent.press(getByTestId('paywall-terms'));
+    fireEvent.press(getByTestId('paywall-terms'));
+    expect(mockRouterPush).toHaveBeenCalledWith('/legal/terms');
+    expect(mockRouterPush).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+    fireEvent.press(getByTestId('paywall-terms'));
+    expect(mockRouterPush).toHaveBeenCalledTimes(1);
+
+    t += NAV_LOCK_MS;
+    fireEvent.press(getByTestId('paywall-privacy'));
+    expect(mockRouterPush).toHaveBeenCalledWith('/legal/privacy');
+    expect(mockRouterPush).toHaveBeenCalledTimes(2);
     await unmount();
   });
 });

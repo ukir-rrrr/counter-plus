@@ -17,6 +17,8 @@ describe('devToolsFab', () => {
   it('購入画面と編集シートでは隠す', () => {
     expect(shouldHideDevToolsFab('/paywall')).toBe(true);
     expect(shouldHideDevToolsFab('/counter/abc')).toBe(true);
+    expect(shouldHideDevToolsFab('/legal/terms')).toBe(true);
+    expect(shouldHideDevToolsFab('/legal/privacy')).toBe(true);
     expect(shouldHideDevToolsFab('/')).toBe(false);
     expect(shouldHideDevToolsFab('/settings')).toBe(false);
   });

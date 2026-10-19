@@ -1,6 +1,8 @@
 import { AppState, Platform, type AppStateStatus, type NativeEventSubscription } from 'react-native';
 import { create } from 'zustand';
 
+import { releaseNavLock, resetNavLockForTests, tryAcquireNavLock } from '@/lib/navLock';
+
 /** RevenueCat の Entitlement 識別子。ダッシュボード側と揃える */
 export const PRO_ENTITLEMENT_ID = 'pro';
 
@@ -505,12 +507,19 @@ function getRouter(): { push: (href: { pathname: string; params?: Record<string,
 }
 
 export function openPaywall(openedFrom: PaywallOpenedFrom = 'settings'): void {
-  // 設定からの自主オープンはゲートではないので送らない
-  if (openedFrom !== 'settings') {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    require('@/lib/analytics').capture('pro_gate_shown', { from: openedFrom });
+  if (!tryAcquireNavLock()) return;
+
+  try {
+    // 設定からの自主オープンはゲートではないので送らない
+    if (openedFrom !== 'settings') {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('@/lib/analytics').capture('pro_gate_shown', { from: openedFrom });
+    }
+    getRouter().push({ pathname: '/paywall', params: { openedFrom } });
+  } catch (e) {
+    releaseNavLock();
+    console.warn('購入画面を開けませんでした', e);
   }
-  getRouter().push({ pathname: '/paywall', params: { openedFrom } });
 }
 
 async function resolveProOrOpenPaywall(openedFrom: PaywallOpenedFrom): Promise<boolean> {
@@ -571,6 +580,7 @@ export function notifyPurchasesAppStateForTests(state: AppStateStatus): void {
 
 /** テスト用。状態とロックを初期化する */
 export function resetPurchasesForTests(): void {
+  resetNavLockForTests();
   injectedClient = null;
   availabilityOverride = null;
   selectedPackage = null;

@@ -14,7 +14,8 @@ import {
   setAdsDelayForTests,
   setAdsSdkForTests,
   setTrackingClientForTests,
-  TEST_BANNER_UNIT_IDS,
+  GOOGLE_SAMPLE_AD_PUBLISHER,
+  isGoogleSampleAdId,
   useAdsStore,
   type AdsSdkClient,
   type TrackingClient,
@@ -37,9 +38,11 @@ function mockTracking(overrides: Partial<TrackingClient> = {}): TrackingClient {
 }
 
 describe('ads 純粋ロジック', () => {
-  it('開発中はテストID、本番は環境変数。空・空白は無し', () => {
-    expect(getBannerUnitId('ios', true)).toBe(TEST_BANNER_UNIT_IDS.ios);
-    expect(getBannerUnitId('android', true)).toBe(TEST_BANNER_UNIT_IDS.android);
+  it('開発中はテストID、本番は環境変数。空・空白・サンプルIDは無し', () => {
+    expect(getBannerUnitId('ios', true)).toBe(`ca-app-pub-${GOOGLE_SAMPLE_AD_PUBLISHER}/2435281174`);
+    expect(getBannerUnitId('android', true)).toBe(
+      `ca-app-pub-${GOOGLE_SAMPLE_AD_PUBLISHER}/9214589741`,
+    );
     withPublicEnv({ EXPO_PUBLIC_ADMOB_IOS_BANNER_UNIT_ID: '  ' }, () => {
       expect(getBannerUnitId('ios', false)).toBeNull();
     });
@@ -49,6 +52,14 @@ describe('ads 純粋ロジック', () => {
     withPublicEnv({ EXPO_PUBLIC_ADMOB_ANDROID_BANNER_UNIT_ID: 'ca-app-pub-3/4' }, () => {
       expect(getBannerUnitId('android', false)).toBe('ca-app-pub-3/4');
     });
+    withPublicEnv(
+      { EXPO_PUBLIC_ADMOB_IOS_BANNER_UNIT_ID: `ca-app-pub-${GOOGLE_SAMPLE_AD_PUBLISHER}/2435281174` },
+      () => {
+        expect(getBannerUnitId('ios', false)).toBeNull();
+      },
+    );
+    expect(isGoogleSampleAdId(`ca-app-pub-${GOOGLE_SAMPLE_AD_PUBLISHER}~1`)).toBe(true);
+    expect(isGoogleSampleAdId('ca-app-pub-1/2')).toBe(false);
   });
 
   it('拒否なら非パーソナライズ広告にする', () => {
@@ -85,7 +96,7 @@ describe('ads ストア', () => {
     });
     expect(useAdsStore.getState().initialized).toBe(true);
     expect(useAdsStore.getState().trackingGranted).toBe(true);
-    expect(useAdsStore.getState().unitId).toBe(TEST_BANNER_UNIT_IDS.ios);
+    expect(useAdsStore.getState().unitId).toBe(`ca-app-pub-${GOOGLE_SAMPLE_AD_PUBLISHER}/2435281174`);
   });
 
   it('空・キー無しでは初期化しない', async () => {
