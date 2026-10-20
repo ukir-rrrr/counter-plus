@@ -22,17 +22,42 @@ function isProductionBuildProfile(env = process.env) {
 }
 
 /**
+ * EAS がビルド中に設定する対象プラットフォーム。
+ * ローカルの expo config など、未設定・不明な値は null。
+ */
+function easBuildPlatform(env = process.env) {
+  const value = env.EAS_BUILD_PLATFORM?.trim();
+  return value === 'ios' || value === 'android' ? value : null;
+}
+
+/**
+ * 本番で未設定・テストIDを拒否するか。
+ * EAS ビルド中は対象プラットフォームだけ厳格にし、
+ * もう一方は env または Google のテストIDで埋める（throw しない）。
+ * EAS_BUILD_PLATFORM が無いときは従来どおり両プラットフォームを厳格にする。
+ */
+function shouldEnforceProductionAdMobId(platform, env = process.env) {
+  if (!isProductionBuildProfile(env)) {
+    return false;
+  }
+  const buildPlatform = easBuildPlatform(env);
+  if (buildPlatform) {
+    return buildPlatform === platform;
+  }
+  return true;
+}
+
+/**
  * ネイティブに埋め込む AdMob App ID。
- * production プロファイルではテストIDも未設定も拒否する。
+ * production ではビルド対象プラットフォームのテストID・未設定を拒否する。
  */
 function resolveAdMobAppId(platform, env = process.env) {
   const name =
     platform === 'android' ? 'EXPO_PUBLIC_ADMOB_ANDROID_APP_ID' : 'EXPO_PUBLIC_ADMOB_IOS_APP_ID';
   const fromEnv = envValue(name, env);
-  const production = isProductionBuildProfile(env);
   const fallback = platform === 'android' ? TEST_ADMOB_ANDROID_APP_ID : TEST_ADMOB_IOS_APP_ID;
 
-  if (production) {
+  if (shouldEnforceProductionAdMobId(platform, env)) {
     if (!fromEnv) {
       throw new Error(
         `本番ビルドには ${name} が必要です。Google のテスト用 App ID は使えません。EAS の production 環境変数を設定してください。`,

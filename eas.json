@@ -24,7 +24,8 @@
   "submit": {
     "production": {
       "ios": {
-        "language": "ja"
+        "language": "ja",
+        "ascAppId": "6824777326"
       }
     }
   }
