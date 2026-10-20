@@ -7,6 +7,7 @@
 
 - App Store Connect 用の利用規約・プライバシーポリシー URL は、公開リポジトリの GitHub Pages で出す。
 - 原稿は `docs/legal/`（アプリ内本文 `src/features/legal/content.ts` と一致。CI で確認する）。
+- 運営者名・所在地・連絡先・公開 origin は `src/features/legal/publisher.json` を正とし、アプリと Pages 生成スクリプトの両方が読む。
 - 静的 HTML は `scripts/build-legal-site.js` が生成する。Jekyll は使わない。
 - GitHub Actions（`configure-pages` / `upload-pages-artifact` / `deploy-pages`）で `main` への push のときだけデプロイする。PR では HTML のビルドだけ行う。
 - 想定URLは `https://ukir-rrrr.github.io/counter-plus/`（privacy / terms はサブパス）。

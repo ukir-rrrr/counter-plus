@@ -1,5 +1,7 @@
 /** 利用規約・プライバシーポリシーの本文。画面と docs/legal の写しで同じ構成にする */
 
+import publisher from './publisher.json';
+
 export type LegalSection = {
   heading: string;
   body: string;
@@ -14,11 +16,11 @@ export type LegalDocument = {
 };
 
 /** 公開ページ（GitHub Pages）。App Store Connect の URL にも使う */
-export const LEGAL_PUBLIC_SITE_ORIGIN = 'https://ukir-rrrr.github.io/counter-plus';
+export const LEGAL_PUBLIC_SITE_ORIGIN = publisher.publicSiteOrigin;
 
-export const LEGAL_OPERATOR_NAME = 'chestnut';
-export const LEGAL_OPERATOR_LOCATION = '日本';
-export const LEGAL_SUPPORT_EMAIL = 'aba929559@gmail.com';
+export const LEGAL_OPERATOR_NAME = publisher.operatorName;
+export const LEGAL_OPERATOR_LOCATION = publisher.operatorLocation;
+export const LEGAL_SUPPORT_EMAIL = publisher.supportEmail;
 
 export const LEGAL_UPDATED_LABEL = '最終更新：2026年10月20日';
 

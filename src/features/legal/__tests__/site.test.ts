@@ -12,6 +12,8 @@ declare const __dirname: string;
 
 type NodeFs = {
   mkdtempSync: (prefix: string) => string;
+  mkdirSync: (path: string, opts?: { recursive?: boolean }) => void;
+  writeFileSync: (path: string, data: string, encoding: 'utf8') => void;
   readFileSync: (path: string, encoding: 'utf8') => string;
   existsSync: (path: string) => boolean;
   rmSync: (path: string, opts: { recursive: boolean; force: boolean }) => void;
@@ -20,23 +22,44 @@ type NodeOs = { tmpdir: () => string };
 type NodePath = { join: (...parts: string[]) => string };
 
 const { join } = require('path') as NodePath;
-const { mkdtempSync, readFileSync, existsSync, rmSync } = require('fs') as NodeFs;
+const {
+  mkdtempSync,
+  mkdirSync,
+  writeFileSync,
+  readFileSync,
+  existsSync,
+  rmSync,
+} = require('fs') as NodeFs;
 const { tmpdir } = require('os') as NodeOs;
 
-const { buildLegalSite } = require(join(__dirname, '../../../../scripts/build-legal-site.js')) as {
-  buildLegalSite: (options?: { outDir?: string }) => { outDir: string; files: string[] };
+const {
+  LEGAL_SITE_DIR_NAME,
+  assertSafeOutDir,
+  buildLegalSite,
+} = require(join(__dirname, '../../../../scripts/build-legal-site.js')) as {
+  LEGAL_SITE_DIR_NAME: string;
+  assertSafeOutDir: (outDir: string, rootDir: string) => string;
+  buildLegalSite: (options?: {
+    outDir?: string;
+    rootDir?: string;
+    docsDir?: string;
+  }) => { outDir: string; files: string[] };
 };
 
+const docsDir = join(__dirname, '../../../../docs/legal');
+
 describe('公開用の静的サイト', () => {
+  let fakeRoot = '';
   let outDir = '';
 
   beforeAll(() => {
-    outDir = mkdtempSync(join(tmpdir(), 'legal-site-'));
-    buildLegalSite({ outDir });
+    fakeRoot = mkdtempSync(join(tmpdir(), 'legal-root-'));
+    outDir = join(fakeRoot, LEGAL_SITE_DIR_NAME);
+    buildLegalSite({ rootDir: fakeRoot, docsDir, outDir });
   });
 
   afterAll(() => {
-    if (outDir) rmSync(outDir, { recursive: true, force: true });
+    if (fakeRoot) rmSync(fakeRoot, { recursive: true, force: true });
   });
 
   function readPage(rel: string): string {
@@ -75,6 +98,44 @@ describe('公開用の静的サイト', () => {
     for (const html of [privacy, terms, home]) {
       expect(html).not.toMatch(/\{\{/);
       expect(html).toContain(`運営：${LEGAL_OPERATOR_NAME}`);
+    }
+  });
+});
+
+describe('出力先の削除ガード', () => {
+  it('legal-site とその配下だけを許可する', () => {
+    const root = '/workspace';
+    expect(assertSafeOutDir(join(root, 'legal-site'), root)).toBe(join(root, 'legal-site'));
+    expect(assertSafeOutDir(join(root, 'legal-site', 'nested'), root)).toBe(
+      join(root, 'legal-site', 'nested'),
+    );
+    expect(() => assertSafeOutDir(root, root)).toThrow(/legal-site/);
+    expect(() => assertSafeOutDir(join(root, '.'), root)).toThrow(/legal-site/);
+    expect(() => assertSafeOutDir(join(root, 'src'), root)).toThrow(/legal-site/);
+    expect(() => assertSafeOutDir(join(root, 'legal-site-backup'), root)).toThrow(/legal-site/);
+  });
+
+  it('誤った出力先ではリポジトリ直下のファイルを消さない', () => {
+    const fakeRoot = mkdtempSync(join(tmpdir(), 'legal-guard-'));
+    try {
+      writeFileSync(join(fakeRoot, 'keep.txt'), '残す', 'utf8');
+      mkdirSync(join(fakeRoot, 'src'));
+      writeFileSync(join(fakeRoot, 'src', 'app.ts'), 'コード', 'utf8');
+
+      expect(() => buildLegalSite({ rootDir: fakeRoot, docsDir, outDir: fakeRoot })).toThrow(
+        /legal-site/,
+      );
+      expect(() =>
+        buildLegalSite({ rootDir: fakeRoot, docsDir, outDir: join(fakeRoot, '.') }),
+      ).toThrow(/legal-site/);
+      expect(() =>
+        buildLegalSite({ rootDir: fakeRoot, docsDir, outDir: join(fakeRoot, 'src') }),
+      ).toThrow(/legal-site/);
+
+      expect(readFileSync(join(fakeRoot, 'keep.txt'), 'utf8')).toBe('残す');
+      expect(readFileSync(join(fakeRoot, 'src', 'app.ts'), 'utf8')).toBe('コード');
+    } finally {
+      rmSync(fakeRoot, { recursive: true, force: true });
     }
   });
 });

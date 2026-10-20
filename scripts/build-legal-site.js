@@ -7,10 +7,13 @@
 const fs = require('fs');
 const path = require('path');
 
-const DEFAULT_ORIGIN = 'https://ukir-rrrr.github.io/counter-plus';
-const DEFAULT_EMAIL = 'aba929559@gmail.com';
-const DEFAULT_OPERATOR = 'chestnut';
-const DEFAULT_LOCATION = '日本';
+const publisher = require('../src/features/legal/publisher.json');
+
+const LEGAL_SITE_DIR_NAME = 'legal-site';
+const DEFAULT_ORIGIN = publisher.publicSiteOrigin;
+const DEFAULT_EMAIL = publisher.supportEmail;
+const DEFAULT_OPERATOR = publisher.operatorName;
+const DEFAULT_LOCATION = publisher.operatorLocation;
 
 const PAGES = [
   {
@@ -250,11 +253,32 @@ function homeBody(email) {
 <p>お問い合わせは ${linkifySupportEmail(escapeHtml(email), email)} までご連絡ください。</p>`;
 }
 
+function repoRootDir() {
+  return path.join(__dirname, '..');
+}
+
+/**
+ * 消してよいのは rootDir/legal-site とその配下だけ。
+ * `.` や src を渡してリポジトリごと消さないためのガード。
+ */
+function assertSafeOutDir(outDir, rootDir) {
+  const resolvedOut = path.resolve(outDir);
+  const allowedRoot = path.resolve(rootDir, LEGAL_SITE_DIR_NAME);
+  const relative = path.relative(allowedRoot, resolvedOut);
+  if (relative.startsWith('..') || path.isAbsolute(relative)) {
+    throw new Error(
+      `出力先は ${LEGAL_SITE_DIR_NAME}/ 以下だけです（受け取った値: ${outDir}）`,
+    );
+  }
+  return resolvedOut;
+}
+
 function resolveDirs(options = {}) {
-  const root = options.rootDir ?? path.join(__dirname, '..');
+  const root = options.rootDir ?? repoRootDir();
+  const requestedOut = options.outDir ?? path.join(root, LEGAL_SITE_DIR_NAME);
   return {
     docsDir: options.docsDir ?? path.join(root, 'docs', 'legal'),
-    outDir: options.outDir ?? path.join(root, 'legal-site'),
+    outDir: assertSafeOutDir(requestedOut, root),
     origin: (options.origin ?? DEFAULT_ORIGIN).replace(/\/$/, ''),
     email: options.email ?? DEFAULT_EMAIL,
     operator: options.operator ?? DEFAULT_OPERATOR,
@@ -302,6 +326,8 @@ if (require.main === module) {
 module.exports = {
   DEFAULT_ORIGIN,
   DEFAULT_EMAIL,
+  LEGAL_SITE_DIR_NAME,
+  assertSafeOutDir,
   buildLegalSite,
   markdownToInnerHtml,
   escapeHtml,

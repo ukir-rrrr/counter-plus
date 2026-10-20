@@ -115,7 +115,7 @@ counter-plus/
       history/
       export/               # CSV生成と共有
       settings/
-      legal/                # 利用規約・プライバシーの本文と画面
+      legal/                # 利用規約・プライバシーの本文と画面（publisher.json が運営者情報の正）
     lib/
       purchases.ts          # RevenueCat、useIsPro() / getIsPro()
       ads.tsx               # バナー（Proなら表示しない）

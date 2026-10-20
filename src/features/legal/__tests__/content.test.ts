@@ -1,6 +1,7 @@
 import {
   LEGAL_OPERATOR_LOCATION,
   LEGAL_OPERATOR_NAME,
+  LEGAL_PUBLIC_SITE_ORIGIN,
   LEGAL_SUPPORT_EMAIL,
   PRIVACY_POLICY,
   TERMS_OF_SERVICE,
@@ -79,5 +80,22 @@ describe('法務ドキュメント', () => {
     const envExample = readRepoFile('.env.example');
     expect(envExample).toContain('EXPO_PUBLIC_SUPPORT_EMAIL=');
     expect(envExample).toContain(LEGAL_SUPPORT_EMAIL);
+  });
+
+  it('運営者情報は publisher.json を正とする', () => {
+    const publisher = JSON.parse(readRepoFile('src/features/legal/publisher.json')) as {
+      operatorName: string;
+      operatorLocation: string;
+      supportEmail: string;
+      publicSiteOrigin: string;
+    };
+    expect(LEGAL_OPERATOR_NAME).toBe(publisher.operatorName);
+    expect(LEGAL_OPERATOR_LOCATION).toBe(publisher.operatorLocation);
+    expect(LEGAL_SUPPORT_EMAIL).toBe(publisher.supportEmail);
+    expect(LEGAL_PUBLIC_SITE_ORIGIN).toBe(publisher.publicSiteOrigin);
+    expect(readRepoFile('scripts/build-legal-site.js')).toContain(
+      "require('../src/features/legal/publisher.json')",
+    );
+    expect(readRepoFile('scripts/build-legal-site.js')).not.toContain('aba929559@gmail.com');
   });
 });
