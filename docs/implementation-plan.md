@@ -69,7 +69,7 @@ AIに頼むときは「implementation-plan.md のステップ N を実装して�
 ## ステップ9：リリース準備
 
 - [x] アプリアイコンとスプラッシュ（ブランド色。テンプレートの Expo アイコンを置き換え）
-- [x] プライバシーポリシーと利用規約のページ（アプリ内。公開用の写しは `docs/legal/`）
+- [x] プライバシーポリシーと利用規約のページ（アプリ内。公開用の写しは `docs/legal/`。GitHub Pages で公開）
 - [x] App Store の説明文・キーワード・スクリーンショット計画（`docs/app-store-listing.md`）
 - [x] リリースチェックリスト（`docs/release-checklist.md`。ASC / RevenueCat / AdMob / PostHog / EAS）
 - [x] eas.json の development / preview / production（環境変数は EAS、秘密はコミットしない）

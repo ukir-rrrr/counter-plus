@@ -90,3 +90,15 @@ App Store Connect で必要なサイズは時期により変わる。提出時�
 使ってよい見本データ: `docs/design/mockups/` の在庫例。個人情報・実店舗の内部データは写さない。
 
 iPad用スクリーンショットは、このアプリが iPhone のみのため不要。
+
+## App Store Connect に入れる URL
+
+公開ページは GitHub Pages。詳細は `docs/release-checklist.md`。
+
+| 項目 | URL |
+| --- | --- |
+| プライバシーポリシーURL | https://ukir-rrrr.github.io/counter-plus/privacy/ |
+| サポートURL | https://ukir-rrrr.github.io/counter-plus/ |
+| 利用規約URL | https://ukir-rrrr.github.io/counter-plus/terms/ |
+
+お問い合わせメールは `aba929559@gmail.com`（`EXPO_PUBLIC_SUPPORT_EMAIL` と同じ）。

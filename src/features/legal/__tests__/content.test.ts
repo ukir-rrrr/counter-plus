@@ -1,4 +1,12 @@
-import { PRIVACY_POLICY, TERMS_OF_SERVICE } from '../content';
+import {
+  LEGAL_OPERATOR_LOCATION,
+  LEGAL_OPERATOR_NAME,
+  LEGAL_PUBLIC_SITE_ORIGIN,
+  LEGAL_SUPPORT_EMAIL,
+  PRIVACY_POLICY,
+  TERMS_OF_SERVICE,
+  legalDocumentToMarkdown,
+} from '../content';
 
 declare function require(id: string): unknown;
 declare const __dirname: string;
@@ -6,10 +14,18 @@ declare const __dirname: string;
 type NodeFs = { readFileSync: (path: string, encoding: 'utf8') => string };
 type NodePath = { join: (...parts: string[]) => string };
 
-function readDoc(file: string): string {
+function readRepoFile(relFromRoot: string): string {
   const { readFileSync } = require('fs') as NodeFs;
   const { join } = require('path') as NodePath;
-  return readFileSync(join(__dirname, '../../../../docs/legal', file), 'utf8');
+  return readFileSync(join(__dirname, '../../../..', relFromRoot), 'utf8');
+}
+
+function readDoc(file: string): string {
+  return readRepoFile(`docs/legal/${file}`);
+}
+
+function fullText(doc: typeof TERMS_OF_SERVICE): string {
+  return `${doc.intro}\n${doc.sections.map((s) => s.body).join('\n')}`;
 }
 
 describe('法務ドキュメント', () => {
@@ -32,28 +48,54 @@ describe('法務ドキュメント', () => {
     expect(text).toContain('送りません');
   });
 
-  it('docs/legal の写しとアプリ内の見出しがずれない', () => {
-    const termsMd = readDoc('terms.md');
-    const privacyMd = readDoc('privacy.md');
-    expect(termsMd).toContain('# 利用規約');
-    expect(privacyMd).toContain('# プライバシーポリシー');
-    for (const section of TERMS_OF_SERVICE.sections) {
-      expect(termsMd).toContain(section.heading);
-    }
-    for (const section of PRIVACY_POLICY.sections) {
-      expect(privacyMd).toContain(section.heading);
-    }
+  it('docs/legal の写しがアプリ内本文と完全一致する', () => {
+    expect(readDoc('terms.md')).toBe(legalDocumentToMarkdown(TERMS_OF_SERVICE));
+    expect(readDoc('privacy.md')).toBe(legalDocumentToMarkdown(PRIVACY_POLICY));
   });
 
-  it('公開前に埋める運営者情報のプレースホルダーがある', () => {
-    const terms = `${TERMS_OF_SERVICE.intro}\n${TERMS_OF_SERVICE.sections.map((s) => s.body).join('\n')}`;
-    const privacy = `${PRIVACY_POLICY.intro}\n${PRIVACY_POLICY.sections.map((s) => s.body).join('\n')}`;
-    expect(terms).toContain('{{運営者名}}');
-    expect(terms).toContain('{{所在地}}');
-    expect(privacy).toContain('{{運営者名}}');
-    expect(privacy).toContain('{{所在地}}');
-    expect(privacy).toContain('{{連絡先メール}}');
-    expect(readDoc('terms.md')).toContain('{{運営者名}}');
-    expect(readDoc('privacy.md')).toContain('{{連絡先メール}}');
+  it('運営者情報のプレースホルダーが残っていない', () => {
+    const terms = fullText(TERMS_OF_SERVICE);
+    const privacy = fullText(PRIVACY_POLICY);
+    for (const text of [terms, privacy, readDoc('terms.md'), readDoc('privacy.md')]) {
+      expect(text).not.toMatch(/\{\{/);
+      expect(text).not.toContain('運営者名');
+      expect(text).not.toContain('連絡先メール');
+    }
+    expect(terms).toContain(LEGAL_OPERATOR_NAME);
+    expect(terms).toContain(LEGAL_OPERATOR_LOCATION);
+    expect(privacy).toContain(LEGAL_OPERATOR_NAME);
+    expect(privacy).toContain(LEGAL_OPERATOR_LOCATION);
+    expect(privacy).toContain(LEGAL_SUPPORT_EMAIL);
+  });
+
+  it('管轄は住所を書かず地方裁判所の専属的合意管轄とする', () => {
+    const jurisdiction = TERMS_OF_SERVICE.sections.find((s) => s.heading.startsWith('9.'));
+    expect(jurisdiction?.body).toContain('運営者の住所地を管轄する地方裁判所');
+    expect(jurisdiction?.body).toContain('第一審の専属的合意管轄裁判所');
+    expect(jurisdiction?.body).not.toContain('丁目');
+    expect(jurisdiction?.body).not.toContain('番地');
+  });
+
+  it('.env.example にお問い合わせメールの例がある', () => {
+    const envExample = readRepoFile('.env.example');
+    expect(envExample).toContain('EXPO_PUBLIC_SUPPORT_EMAIL=');
+    expect(envExample).toContain(LEGAL_SUPPORT_EMAIL);
+  });
+
+  it('運営者情報は publisher.json を正とする', () => {
+    const publisher = JSON.parse(readRepoFile('src/features/legal/publisher.json')) as {
+      operatorName: string;
+      operatorLocation: string;
+      supportEmail: string;
+      publicSiteOrigin: string;
+    };
+    expect(LEGAL_OPERATOR_NAME).toBe(publisher.operatorName);
+    expect(LEGAL_OPERATOR_LOCATION).toBe(publisher.operatorLocation);
+    expect(LEGAL_SUPPORT_EMAIL).toBe(publisher.supportEmail);
+    expect(LEGAL_PUBLIC_SITE_ORIGIN).toBe(publisher.publicSiteOrigin);
+    expect(readRepoFile('scripts/build-legal-site.js')).toContain(
+      "require('../src/features/legal/publisher.json')",
+    );
+    expect(readRepoFile('scripts/build-legal-site.js')).not.toContain('aba929559@gmail.com');
   });
 });

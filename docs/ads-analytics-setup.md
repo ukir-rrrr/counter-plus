@@ -92,7 +92,7 @@ EAS Build では [Environment variables](https://docs.expo.dev/eas/environment-v
 - アナリティクス: PostHog（イベント名と件数だけ。項目名・メモ・メールは送らない）
 - アカウントは無いので、連絡先や名前は収集しない
 
-プライバシーポリシーの URL（ステップ9）も提出に必要です。ATT を使うアプリは、トラッキングの申告とポリシーの記載が審査で見られます。
+プライバシーポリシーの URL も提出に必要です（`https://ukir-rrrr.github.io/counter-plus/privacy/`。手順は `docs/release-checklist.md`）。ATT を使うアプリは、トラッキングの申告とポリシーの記載が審査で見られます。
 
 ## 5. よくある失敗
 

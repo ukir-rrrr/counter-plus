@@ -44,6 +44,9 @@ example
 /ios
 /android
 
+# GitHub Pages の生成物（CI が scripts/build-legal-site.js で作る）
+/legal-site
+
 # secrets
 .env
 
