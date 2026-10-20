@@ -74,6 +74,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "legal:site": "node scripts/build-legal-site.js",
     "db:generate": "drizzle-kit generate"
   },
   "private": true

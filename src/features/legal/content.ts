@@ -13,14 +13,20 @@ export type LegalDocument = {
   sections: LegalSection[];
 };
 
-export const LEGAL_UPDATED_LABEL = '最終更新：2026年10月13日';
+/** 公開ページ（GitHub Pages）。App Store Connect の URL にも使う */
+export const LEGAL_PUBLIC_SITE_ORIGIN = 'https://ukir-rrrr.github.io/counter-plus';
+
+export const LEGAL_OPERATOR_NAME = 'chestnut';
+export const LEGAL_OPERATOR_LOCATION = '日本';
+export const LEGAL_SUPPORT_EMAIL = 'aba929559@gmail.com';
+
+export const LEGAL_UPDATED_LABEL = '最終更新：2026年10月20日';
 
 export const TERMS_OF_SERVICE: LegalDocument = {
   id: 'terms',
   title: '利用規約',
   updatedLabel: LEGAL_UPDATED_LABEL,
-  intro:
-    'この利用規約（以下「本規約」）は、アプリ「カウンター＋」（以下「本アプリ」）の利用条件を定めるものです。本アプリをダウンロードし、または利用した時点で、本規約に同意したものとみなします。',
+  intro: `この利用規約（以下「本規約」）は、${LEGAL_OPERATOR_NAME}（所在地：${LEGAL_OPERATOR_LOCATION}。以下「提供者」）が提供するアプリ「カウンター＋」（以下「本アプリ」）の利用条件を定めるものです。本アプリをダウンロードし、または利用した時点で、本規約に同意したものとみなします。`,
   sections: [
     {
       heading: '1. サービス内容',
@@ -56,7 +62,7 @@ export const TERMS_OF_SERVICE: LegalDocument = {
     },
     {
       heading: '9. 準拠法',
-      body: '本規約は日本法に準拠します。本アプリに関して紛争が生じた場合は、提供者（{{運営者名}}、所在地：{{所在地}}）の所在地を管轄する裁判所を第一審の専属的合意管轄とします。',
+      body: '本規約は日本法に準拠します。本アプリに関して紛争が生じた場合は、運営者の住所地を管轄する地方裁判所を第一審の専属的合意管轄裁判所とします。',
     },
   ],
 };
@@ -65,8 +71,7 @@ export const PRIVACY_POLICY: LegalDocument = {
   id: 'privacy',
   title: 'プライバシーポリシー',
   updatedLabel: LEGAL_UPDATED_LABEL,
-  intro:
-    'カウンター＋（以下「本アプリ」）の提供者（{{運営者名}}、所在地：{{所在地}}。以下「提供者」）は、本アプリにおける情報の取り扱いを次のとおり定めます。本アプリはアカウント登録を行わず、カウントの中身をサーバーへ送りません。',
+  intro: `カウンター＋（以下「本アプリ」）の提供者（${LEGAL_OPERATOR_NAME}、所在地：${LEGAL_OPERATOR_LOCATION}。以下「提供者」）は、本アプリにおける情報の取り扱いを次のとおり定めます。本アプリはアカウント登録を行わず、カウントの中身をサーバーへ送りません。`,
   sections: [
     {
       heading: '1. 端末内に保存する情報',
@@ -98,7 +103,7 @@ export const PRIVACY_POLICY: LegalDocument = {
     },
     {
       heading: '8. お問い合わせ',
-      body: '本ポリシーや個人情報の取り扱いについてのお問い合わせは、本アプリの設定画面「お問い合わせ」または {{連絡先メール}} までご連絡ください。設定のメールが未設定の場合は、公開している本ポリシーのページに記載の連絡先をご利用ください。',
+      body: `本ポリシーや個人情報の取り扱いについてのお問い合わせは、本アプリの設定画面「お問い合わせ」または ${LEGAL_SUPPORT_EMAIL} までご連絡ください。設定のメールが未設定の場合は、公開している本ポリシーのページに記載の連絡先をご利用ください。`,
     },
     {
       heading: '9. 変更',
@@ -109,4 +114,13 @@ export const PRIVACY_POLICY: LegalDocument = {
 
 export function legalRoute(id: LegalDocument['id']): '/legal/terms' | '/legal/privacy' {
   return id === 'terms' ? '/legal/terms' : '/legal/privacy';
+}
+
+/** docs/legal の写しと同じ並びの Markdown。公開ページの原稿にも使う */
+export function legalDocumentToMarkdown(doc: LegalDocument): string {
+  const parts = [`# ${doc.title}`, '', doc.updatedLabel, '', doc.intro, ''];
+  for (const section of doc.sections) {
+    parts.push(`## ${section.heading}`, '', section.body, '');
+  }
+  return `${parts.join('\n').trimEnd()}\n`;
 }

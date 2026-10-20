@@ -15,10 +15,23 @@
 
 App Store Connect は **https で誰でも開けるプライバシーポリシー URL** を要求する。アプリ内画面だけでは不足する。
 
-1. `docs/legal/privacy.md` と `docs/legal/terms.md` を、GitHub Pages / 公開Notion / 自分のサイトなどにそのまま掲載する
-2. 掲載URLを控える（例: `https://example.com/counter-plus/privacy`）
-3. アプリ内の文面と食い違わないようにする。直すときは `src/features/legal/content.ts` と `docs/legal/` を同じ内容にする
-4. 公開前に、本文のプレースホルダー（`{{運営者名}}` / `{{連絡先メール}}` / `{{所在地}}`）を、運営者名、連絡先メール、所在地（または管轄の表記）に置き換える。設定の「お問い合わせ」を使うなら `EXPO_PUBLIC_SUPPORT_EMAIL` も入れる。実在の個人情報をリポジトリへ載せる前に、公開してよいか確認する
+公開は GitHub Pages（`main` への push で `.github/workflows/pages.yml` が `docs/legal/` から静的 HTML を出す）。初回だけ、リポジトリの **Settings → Pages → Build and deployment → Source を GitHub Actions** にする（オーナー作業。マージや提出はしない）。
+
+| 用途 | URL |
+| --- | --- |
+| トップ（サポートURL） | https://ukir-rrrr.github.io/counter-plus/ |
+| プライバシーポリシーURL | https://ukir-rrrr.github.io/counter-plus/privacy/ |
+| 利用規約URL | https://ukir-rrrr.github.io/counter-plus/terms/ |
+
+App Store Connect に入れる値:
+
+- **プライバシーポリシーURL**（必須）: `https://ukir-rrrr.github.io/counter-plus/privacy/`
+- **サポートURL**: `https://ukir-rrrr.github.io/counter-plus/`（トップ。問い合わせ先もここに記載）
+- **利用規約URL**（IAP があるので推奨）: `https://ukir-rrrr.github.io/counter-plus/terms/`
+
+文面の正は `src/features/legal/content.ts`。`docs/legal/` は同じ本文の写しで、CI が一致を確認する。直すときは両方を同じ内容にする。
+
+お問い合わせメールは `aba929559@gmail.com`。EAS の `EXPO_PUBLIC_SUPPORT_EMAIL` にも同じ値を入れる。
 
 ## 2. EAS の環境変数を入れる
 
@@ -35,11 +48,11 @@ App Store Connect は **https で誰でも開けるプライバシーポリシ�
 | `EXPO_PUBLIC_POSTHOG_API_KEY` | 開発プロジェクトでも可 | 任意 | 本番プロジェクト |
 | `EXPO_PUBLIC_POSTHOG_HOST` | `https://us.i.posthog.com` など | 同左 | 同左 |
 | `EXPO_PUBLIC_APP_STORE_ID` | 空でも可 | 数字のApple ID | 数字のApple ID（レビューリンク用） |
-| `EXPO_PUBLIC_SUPPORT_EMAIL` | 自分のメール | 同じ | 同じ（お問い合わせの mailto） |
+| `EXPO_PUBLIC_SUPPORT_EMAIL` | `aba929559@gmail.com` | 同じ | 同じ（お問い合わせの mailto） |
 
 production の AdMob App ID に Google サンプル（`ca-app-pub-3940256099942544~…`）を入れると、設定の段階でエラーにする。
 
-ローカル確認は `.env`（Git管理外）。`.env.example` はキー名だけ。
+ローカル確認は `.env`（Git管理外）。`.env.example` はキー名と、お問い合わせメールの例だけ。
 
 ## 3. App Store Connect — アプリ本体
 
@@ -87,17 +100,17 @@ Sandbox テスターを App Store Connect で作り、実機の設定 → App St
 
 - トラッキング: AdMob のパーソナライズ広告（ATT 許可時）
 - アカウント・連絡先・名前は収集しない
-- プライバシーポリシーURL: 手順1でホストしたURL（必須）
-- 利用規約URL: ホストした利用規約（IAP があるので推奨）
+- プライバシーポリシーURL: `https://ukir-rrrr.github.io/counter-plus/privacy/`（必須）
+- 利用規約URL: `https://ukir-rrrr.github.io/counter-plus/terms/`（IAP があるので推奨）
 
 ## 8. 掲載メタデータ
 
 `docs/app-store-listing.md` をコピーする。
 
 - 名前 / サブタイトル / 説明 / キーワード / What's New
-- サポートURL（任意）とマーケティングURL（任意）
+- サポートURL: `https://ukir-rrrr.github.io/counter-plus/`（マーケティングURLは任意）
 - 著作権表記
-- 連絡先メール（`EXPO_PUBLIC_SUPPORT_EMAIL` と同じでよい）
+- 連絡先メール: `aba929559@gmail.com`（`EXPO_PUBLIC_SUPPORT_EMAIL` と同じ）
 
 ## 9. 審査メモ（IAP・広告）
 

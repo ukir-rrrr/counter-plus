@@ -6,7 +6,7 @@
 ## 決定
 
 - 利用規約・プライバシーポリシーはアプリ内画面（`src/app/legal/`）で読む。オフラインでも開ける。設定と購入画面のリンクはブラウザではなくこの画面へ進む。
-- App Store Connect 用の公開URLは、同じ文面を `docs/legal/` に置き、オーナーがホストする（アプリに秘密のホスティングは持たない）。
+- App Store Connect 用の公開URLは、同じ文面を `docs/legal/` に置き、GitHub Pages でホストする（ADR 0016。アプリに秘密のホスティングは持たない）。
 - お問い合わせは `EXPO_PUBLIC_SUPPORT_EMAIL` の mailto。レビューは `EXPO_PUBLIC_APP_STORE_ID` の App Store URL。未設定なら「準備中」ではなく、設定がまだである旨を出す。
 - EAS の development / preview / production は `eas.json` の `environment` で環境変数セットを切り替える。実キーはコミットしない。
 - production ビルドの AdMob App ID に Google のテストIDを使わない。未設定も拒否する。バナーユニットIDも本番ではテストIDを捨てる。

@@ -5,6 +5,6 @@ import expoConfig from 'eslint-config-expo/flat';
 export default [
   ...expoConfig,
   {
-    ignores: ['node_modules/', '.expo/', 'drizzle/', 'assets/'],
+    ignores: ['node_modules/', '.expo/', 'drizzle/', 'assets/', 'legal-site/'],
   },
 ];

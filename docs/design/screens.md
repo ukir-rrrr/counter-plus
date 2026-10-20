@@ -89,7 +89,7 @@
 
 - 設定および Pro 購入画面のリンクから開く
 - ヘッダーに戻る、本文はスクロール。トークンは他画面と同じ
-- 文面の正は `src/features/legal/content.ts`。公開用の写しは `docs/legal/`
+- 文面の正は `src/features/legal/content.ts`。公開用の写しは `docs/legal/`。GitHub Pages（https://ukir-rrrr.github.io/counter-plus/）でホストする
 
 ## 履歴（Pro）`src/app/history.tsx`
 
