@@ -1,6 +1,6 @@
 import { Pressable, Text, View } from 'react-native';
 
-import { itemColors, type ItemColor } from '@/constants/theme';
+import { itemColorOrder, itemColors, type ItemColor } from '@/constants/theme';
 
 const colorLabels: Record<ItemColor, string> = {
   blue: '青',
@@ -11,14 +11,12 @@ const colorLabels: Record<ItemColor, string> = {
   gray: 'グレー',
 };
 
-const colorKeys = Object.keys(itemColors) as ItemColor[];
-
 export function ColorPicker({ value, onChange }: { value: string; onChange: (color: ItemColor) => void }) {
   return (
     <View className="gap-2">
       <Text className="font-sans-medium text-label text-ink-muted">色</Text>
       <View className="flex-row gap-0.5">
-        {colorKeys.map((key) => {
+        {itemColorOrder.map((key) => {
           const selected = key === value;
           return (
             <Pressable

@@ -59,7 +59,12 @@ function HistoryEventRow({
       accessible
       accessibilityLabel={`${time} ${event.counterName} ${event.categoryName} ${badge.label} ${event.countAfter}`}
       className="min-h-[52px] flex-row items-center gap-2.5 rounded-control border border-border bg-surface px-3.5">
-      <Text className="w-10 shrink-0 font-mono-medium text-label text-ink-muted">{time}</Text>
+      <Text
+        testID={`history-event-time-${index}`}
+        numberOfLines={1}
+        className="min-w-10 shrink-0 font-mono-medium text-label tabular-nums text-ink-muted">
+        {time}
+      </Text>
       <View accessible={false} className="min-w-0 flex-1">
         <Text numberOfLines={1} className="font-sans-medium text-body-sm text-ink">
           {event.counterName}

@@ -1,9 +1,9 @@
 import { create } from 'zustand';
 
-import { itemColors, type ItemColor } from '@/constants/theme';
 import { newId } from '@/db/id';
 import type { CountEventType, Counter } from '@/db/schema';
 
+import { nextDefaultItemColor } from './defaultColor';
 import {
   createCounter,
   deleteCounter,
@@ -46,8 +46,6 @@ type CountersState = {
   move: (id: string, categoryId: string) => void;
   remove: (id: string) => void;
 };
-
-const colorKeys = Object.keys(itemColors) as ItemColor[];
 
 // 書き込みは1件ずつ順番に行う。setTimeout で数字の描画を先に済ませてから保存する
 let writeQueue: Promise<void> = Promise.resolve();
@@ -162,7 +160,8 @@ export const useCountersStore = create<CountersState>((set, get) => {
     add: (name) => {
       const { categoryId, ids } = get();
       if (!categoryId) return;
-      const row = createCounter({ categoryId, name, color: colorKeys[ids.length % colorKeys.length] });
+      // ids は表示中カテゴリの品目。全体件数ではなく、このカテゴリの件数で循環する
+      const row = createCounter({ categoryId, name, color: nextDefaultItemColor(ids.length) });
       set((s) => ({ ids: [...s.ids, row.id], byId: { ...s.byId, [row.id]: row } }));
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       require('@/lib/analytics').capture('counter_created');
