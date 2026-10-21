@@ -59,6 +59,20 @@ export const itemColors = {
 
 export type ItemColor = keyof typeof itemColors;
 
+/**
+ * 項目色の表示・既定割り当ての順。
+ * docs/design/screens.md と編集モックのパレット（青→緑→オレンジ→紫→赤→グレー）に合わせる。
+ * Object.keys に頼るとエンジンや圧縮で順が変わることがある。
+ */
+export const itemColorOrder: readonly ItemColor[] = [
+  'blue',
+  'green',
+  'orange',
+  'purple',
+  'red',
+  'gray',
+];
+
 export const fonts = {
   sans: 'IBMPlexSansJP_400Regular',
   sansMedium: 'IBMPlexSansJP_500Medium',

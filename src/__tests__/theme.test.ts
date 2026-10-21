@@ -1,4 +1,13 @@
-import { colors, itemColors, fonts, fontSize, radius, spacing, minTouchSize } from '../constants/theme';
+import {
+  colors,
+  itemColorOrder,
+  itemColors,
+  fonts,
+  fontSize,
+  radius,
+  spacing,
+  minTouchSize,
+} from '../constants/theme';
 import type { ItemColor, ColorScheme } from '../constants/theme';
 
 describe('theme colors', () => {
@@ -46,8 +55,13 @@ describe('itemColors', () => {
     }
   });
 
-  it('gray を含む（デフォルト色）', () => {
+  it('gray を含む', () => {
     expect(itemColors).toHaveProperty('gray');
+  });
+
+  it('既定色の順は青→緑→オレンジ→紫→赤→グレー', () => {
+    expect(itemColorOrder).toEqual(['blue', 'green', 'orange', 'purple', 'red', 'gray']);
+    expect([...itemColorOrder].sort()).toEqual((Object.keys(itemColors) as ItemColor[]).sort());
   });
 
   it('ItemColor 型のキーと一致する', () => {

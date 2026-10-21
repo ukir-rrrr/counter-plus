@@ -1,6 +1,6 @@
 import type { Counter } from '@/db/schema';
 
-import { deleteCounter, listCounters } from '../repository';
+import { createCounter, deleteCounter, listCounters } from '../repository';
 import { selectTotal, useCountersStore } from '../store';
 
 jest.mock('../repository', () => ({
@@ -15,15 +15,16 @@ jest.mock('../repository', () => ({
 
 const listCountersMock = listCounters as jest.MockedFunction<typeof listCounters>;
 const deleteCounterMock = deleteCounter as jest.MockedFunction<typeof deleteCounter>;
+const createCounterMock = createCounter as jest.MockedFunction<typeof createCounter>;
 
-function makeCounter(id: string, name: string, count = 0): Counter {
+function makeCounter(id: string, name: string, count = 0, color = 'gray'): Counter {
   return {
     id,
     categoryId: 'cat-1',
     name,
     count,
     memo: '',
-    color: 'gray',
+    color,
     sortOrder: 0,
     createdAt: 0,
     updatedAt: 0,
@@ -124,5 +125,64 @@ describe('useCountersStore.remove', () => {
     useCountersStore.getState().remove('missing');
     await useCountersStore.getState().load('cat-1');
     expect(useCountersStore.getState().ids).toEqual(['alpha', 'bravo', 'charlie']);
+  });
+});
+
+describe('useCountersStore.add の既定色', () => {
+  beforeEach(() => {
+    createCounterMock.mockReset();
+    createCounterMock.mockImplementation((input) =>
+      makeCounter(`new-${input.name}`, input.name, 0, input.color),
+    );
+  });
+
+  it('空のカテゴリでは最初の品目が青', () => {
+    seed([]);
+    useCountersStore.getState().add('マグカップ');
+    expect(createCounterMock).toHaveBeenCalledWith({
+      categoryId: 'cat-1',
+      name: 'マグカップ',
+      color: 'blue',
+    });
+    expect(useCountersStore.getState().byId['new-マグカップ']?.color).toBe('blue');
+  });
+
+  it('追加順に青→緑→オレンジ→紫→赤→グレー→青と循環する', () => {
+    seed([]);
+    const expected = ['blue', 'green', 'orange', 'purple', 'red', 'gray', 'blue'] as const;
+    expected.forEach((color, i) => {
+      useCountersStore.getState().add(`item-${i}`);
+      expect(createCounterMock).toHaveBeenNthCalledWith(i + 1, {
+        categoryId: 'cat-1',
+        name: `item-${i}`,
+        color,
+      });
+    });
+  });
+
+  it('削除後は残りのカテゴリ内件数で次の色を決める', () => {
+    seed([
+      makeCounter('a', 'A', 0, 'blue'),
+      makeCounter('b', 'B', 0, 'green'),
+      makeCounter('c', 'C', 0, 'orange'),
+    ]);
+    useCountersStore.getState().remove('b');
+    useCountersStore.getState().add('D');
+    expect(createCounterMock).toHaveBeenCalledWith({
+      categoryId: 'cat-1',
+      name: 'D',
+      color: 'orange',
+    });
+  });
+
+  it('カテゴリ未選択なら追加しない', () => {
+    useCountersStore.setState({
+      categoryId: null,
+      ids: [],
+      byId: {},
+      pendingUndo: null,
+    });
+    useCountersStore.getState().add('無視');
+    expect(createCounterMock).not.toHaveBeenCalled();
   });
 });
